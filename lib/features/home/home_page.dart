@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
-import '../auth/auth_provider.dart';
+import '../../core/auth/auth_provider.dart';
 import '../../shared/widgets/theme_toggle.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/router/navigation_service.dart';
+import '../../core/services/app_services.dart';
+import '../../core/services/secure_storage_service.dart';
 import '../chat/chat_page.dart';
 import '../direct_match/direct_match_page.dart';
 import '../group_run/group_run_page.dart';
+import '../strava/strava_provider.dart';
+import '../profile/profile_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -66,8 +70,27 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: const FaIcon(FontAwesomeIcons.rightFromBracket, size: 20),
             onPressed: () async {
-              await auth.logout();
-              navService.navigateToLogin();
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Apakah kamu yakin ingin keluar?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('Batal'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('Keluar', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed == true) {
+                await auth.logout();
+                navService.navigateToLogin();
+              }
             },
             tooltip: 'Logout',
           ),
@@ -88,10 +111,70 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _HomeView extends StatelessWidget {
+class _HomeView extends StatefulWidget {
   final Function(int)? onNavigate;
 
   const _HomeView({this.onNavigate});
+
+  @override
+  State<_HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<_HomeView> {
+  List<Map<String, dynamic>> _nearbyRunners = [];
+  bool _loadingRunners = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
+  }
+
+  Future<void> _loadData() async {
+    // Load Strava stats
+    final strava = Provider.of<StravaProvider>(context, listen: false);
+    if (strava.stats == null && strava.isConnected) {
+      strava.fetchStats();
+    } else if (!strava.isConnected) {
+      strava.loadAll();
+    }
+
+    // Load nearby runners
+    await _loadNearbyRunners();
+  }
+
+  Future<void> _loadNearbyRunners() async {
+    if (_loadingRunners) return;
+    setState(() => _loadingRunners = true);
+
+    try {
+      final appServices = Provider.of<AppServices>(context, listen: false);
+      final storage = Provider.of<SecureStorageService>(context, listen: false);
+      final profile = Provider.of<ProfileProvider>(context, listen: false);
+      final token = await storage.readToken();
+
+      final lat = profile.latitude ?? 0;
+      final lng = profile.longitude ?? 0;
+
+      if (lat != 0 && lng != 0) {
+        final runners = await appServices.exploreApi.getRunners(
+          latitude: lat,
+          longitude: lng,
+          limit: 5,
+          token: token,
+        );
+        if (mounted) {
+          setState(() => _nearbyRunners = runners);
+        }
+      }
+    } catch (_) {
+      // Silently fail for home page
+    } finally {
+      if (mounted) setState(() => _loadingRunners = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,39 +231,48 @@ class _HomeView extends StatelessWidget {
                       child: Container(
                         width: 50,
                         height: 50,
+                        clipBehavior: Clip.antiAlias,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
                             colors: [AppTheme.neonLime, AppTheme.neonLimeDark],
                           ),
                         ),
-                        child: const FaIcon(FontAwesomeIcons.user, color: Colors.black87),
+                        child: const Center(
+                          child: FaIcon(FontAwesomeIcons.user, color: Colors.black87, size: 22),
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Quick stats
-                Row(
-                  children: [
-                    _StatCard(
-                      label: 'Runs',
-                      value: '12',
-                      icon: FontAwesomeIcons.personRunning,
-                    ),
-                    const SizedBox(width: 12),
-                    _StatCard(
-                      label: 'Distance',
-                      value: '45km',
-                      icon: FontAwesomeIcons.mapLocationDot,
-                    ),
-                    const SizedBox(width: 12),
-                    _StatCard(
-                      label: 'Active',
-                      value: '7d',
-                      icon: FontAwesomeIcons.fire,
-                    ),
-                  ],
+                // Quick stats from Strava
+                Consumer<StravaProvider>(
+                  builder: (context, strava, _) {
+                    return Row(
+                      children: [
+                        _StatCard(
+                          label: 'Runs',
+                          value: '${strava.totalRuns}',
+                          icon: FontAwesomeIcons.personRunning,
+                        ),
+                        const SizedBox(width: 12),
+                        _StatCard(
+                          label: 'Distance',
+                          value: '${strava.totalDistanceKm.toStringAsFixed(1)}km',
+                          icon: FontAwesomeIcons.mapLocationDot,
+                        ),
+                        const SizedBox(width: 12),
+                        _StatCard(
+                          label: 'Avg Pace',
+                          value: strava.avgPace != null
+                              ? strava.avgPace!.toStringAsFixed(1)
+                              : '-',
+                          icon: FontAwesomeIcons.gaugeHigh,
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
@@ -206,9 +298,7 @@ class _HomeView extends StatelessWidget {
                         icon: FontAwesomeIcons.circlePlay,
                         label: 'Start Run',
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Starting a new run...')),
-                          );
+                          navService.navigateToRunActivity();
                         },
                       ),
                     ),
@@ -218,7 +308,7 @@ class _HomeView extends StatelessWidget {
                         icon: FontAwesomeIcons.userPlus,
                         label: 'Find Runners',
                         onPressed: () {
-                          onNavigate?.call(1); // Navigate to Direct Match
+                          widget.onNavigate?.call(1); // Navigate to Direct Match
                         },
                       ),
                     ),
@@ -229,22 +319,10 @@ class _HomeView extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _ActionButton(
-                        icon: FontAwesomeIcons.calendarDays,
-                        label: 'Events',
+                        icon: FontAwesomeIcons.strava,
+                        label: 'Strava Sync',
                         onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              title: const Text('Upcoming Events'),
-                              content: const Text('No events coming up soon.'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Close'),
-                                ),
-                              ],
-                            ),
-                          );
+                          navService.navigateToStrava();
                         },
                       ),
                     ),
@@ -254,7 +332,7 @@ class _HomeView extends StatelessWidget {
                         icon: FontAwesomeIcons.peopleGroup,
                         label: 'My Groups',
                         onPressed: () {
-                          onNavigate?.call(3); // Navigate to Group Runs
+                          widget.onNavigate?.call(3); // Navigate to Group Runs
                         },
                       ),
                     ),
@@ -278,7 +356,7 @@ class _HomeView extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () {
-                    onNavigate?.call(1); // Navigate to Direct Match to see all matches
+                    widget.onNavigate?.call(1); // Navigate to Direct Match to see all matches
                   },
                   child: Text(
                     'See All',
@@ -290,17 +368,49 @@ class _HomeView extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 3,
-              itemBuilder: (context, i) => _RunnerCard(
-                name: 'Runner ${i + 1}',
-                distance: '${5 + i} km',
-                pace: '5:${45 + i} min/km',
-                location: '${1 + i}km away',
-              ),
-            ),
+            child: _loadingRunners
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : _nearbyRunners.isEmpty
+                    ? Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: AppTheme.darkSurfaceVariant
+                              .withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: Text(
+                              'Tidak ada runner terdekat. Pastikan lokasi sudah diset di profil.'),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _nearbyRunners.length,
+                        itemBuilder: (context, i) {
+                          final r = _nearbyRunners[i];
+                          final profile =
+                              r['runner_profile'] as Map<String, dynamic>? ??
+                                  r;
+                          return _RunnerCard(
+                            name: (r['name'] ?? r['full_name'] ?? 'Runner')
+                                .toString(),
+                            distance:
+                                '${(profile['preferred_distance'] ?? 0)} km',
+                            pace: profile['avg_pace'] != null
+                                ? '${(profile['avg_pace'] as num).toStringAsFixed(1)} min/km'
+                                : '-',
+                            location: r['distance_km'] != null
+                                ? '${(r['distance_km'] as num).toStringAsFixed(1)}km away'
+                                : '-',
+                          );
+                        },
+                      ),
           ),
           const SizedBox(height: 24),
         ],
@@ -448,13 +558,16 @@ class _RunnerCard extends StatelessWidget {
           Container(
             width: 48,
             height: 48,
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [AppTheme.neonLime, AppTheme.neonLimeDark],
               ),
             ),
-            child: const FaIcon(FontAwesomeIcons.user, color: Colors.black87, size: 24),
+            child: const Center(
+              child: FaIcon(FontAwesomeIcons.user, color: Colors.black87, size: 20),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

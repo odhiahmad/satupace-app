@@ -46,26 +46,13 @@ class _LoginPageState extends State<LoginPage> {
         final navService = Provider.of<NavigationService>(context, listen: false);
         navService.navigateToHomeAndClear();
       }
-    }
-  }
-
-  Future<void> _handleGoogleLogin(
-      BuildContext context, AuthProvider auth, NavigationService nav) async {
-    final ok = await auth.loginWithGoogle();
-    if (ok && context.mounted) {
-      // Show beautiful loading screen
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const LoadingPage(message: 'Syncing your profile...'),
+    } else if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth.error ?? 'Login failed'),
+          backgroundColor: Colors.red,
+        ),
       );
-
-      // Wait for loading animation
-      await Future.delayed(const Duration(milliseconds: 1500));
-
-      if (context.mounted) {
-        nav.navigateToHomeAndClear();
-      }
     }
   }
 
@@ -179,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
 
-                      // Email field
+                      // Email or phone field
                       Form(
                         key: _formKey,
                         child: Column(
@@ -189,20 +176,19 @@ class _LoginPageState extends State<LoginPage> {
                               controller: _emailCtrl,
                               enabled: !auth.loading,
                               decoration: InputDecoration(
-                                labelText: 'Email',
-                                hintText: 'runner@example.com',
+                                labelText: 'Email or Phone Number',
+                                hintText: 'runner@example.com / +628123456789',
                                 prefixIcon: const Padding(
                                   padding: EdgeInsets.all(12),
-                                  child: FaIcon(FontAwesomeIcons.envelope, size: 18),
+                                  child: FaIcon(FontAwesomeIcons.user, size: 18),
                                 ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              keyboardType: TextInputType.emailAddress,
+                              keyboardType: TextInputType.text,
                               validator: (v) {
-                                if (v == null || v.isEmpty) return 'Email required';
-                                if (!v.contains('@')) return 'Invalid email';
+                                if (v == null || v.trim().isEmpty) return 'Email or phone number required';
                                 return null;
                               },
                             ),
@@ -259,66 +245,6 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Divider
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Divider(
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              'OR',
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Divider(
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Google Sign-in button
-                      SizedBox(
-                        height: 48,
-                        child: OutlinedButton(
-                          onPressed: auth.loading
-                              ? null
-                              : () =>
-                                  _handleGoogleLogin(context, auth, navService),
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            side: BorderSide(
-                              color: Theme.of(context).dividerColor,
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                FontAwesomeIcons.google,
-                                size: 20,
-                                color: Colors.red,
-                              ),
-                              SizedBox(width: 12),
-                              Text('Continue with Google'),
-                            ],
-                          ),
                         ),
                       ),
                     ],

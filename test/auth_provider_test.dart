@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:run_sync/core/auth/auth_provider.dart';
 import 'package:run_sync/core/auth/auth_service.dart';
-import 'package:run_sync/core/auth/google_sign_in_service.dart';
 
 class FakeAuthService implements AuthServiceBase {
   bool shouldSucceed;
@@ -90,8 +89,7 @@ class FakeAuthService implements AuthServiceBase {
 void main() {
   test('AuthProvider login success', () async {
     final authService = FakeAuthService(shouldSucceed: true);
-    final googleSignIn = GoogleSignInService();
-    final provider = AuthProvider(authService, googleSignIn, null);
+    final provider = AuthProvider(authService, null);
     final ok = await provider.login('a@b.com', 'password');
     expect(ok, isTrue);
     expect(provider.isAuthenticated, isTrue);
@@ -101,8 +99,7 @@ void main() {
 
   test('AuthProvider login failure', () async {
     final authService = FakeAuthService(shouldSucceed: false);
-    final googleSignIn = GoogleSignInService();
-    final provider = AuthProvider(authService, googleSignIn, null);
+    final provider = AuthProvider(authService, null);
     final ok = await provider.login('a@b.com', 'password');
     expect(ok, isFalse);
     expect(provider.isAuthenticated, isFalse);
@@ -111,8 +108,7 @@ void main() {
 
   test('AuthProvider logout clears state', () async {
     final authService = FakeAuthService(shouldSucceed: true);
-    final googleSignIn = GoogleSignInService();
-    final provider = AuthProvider(authService, googleSignIn, null);
+    final provider = AuthProvider(authService, null);
     await provider.login('a@b.com', 'password');
     expect(provider.isAuthenticated, isTrue);
     await provider.logout();
@@ -122,8 +118,7 @@ void main() {
 
   test('AuthProvider register then verify OTP', () async {
     final authService = FakeAuthService(shouldSucceed: true);
-    final googleSignIn = GoogleSignInService();
-    final provider = AuthProvider(authService, googleSignIn, null);
+    final provider = AuthProvider(authService, null);
 
     // Register
     final regOk = await provider.register('New User', 'new@user.com', '+628123456', 'male', 'pass123');
@@ -142,8 +137,7 @@ void main() {
 
   test('AuthProvider validates email and password', () async {
     final authService = FakeAuthService(shouldSucceed: true);
-    final googleSignIn = GoogleSignInService();
-    final provider = AuthProvider(authService, googleSignIn, null);
+    final provider = AuthProvider(authService, null);
 
     // Invalid email
     var ok = await provider.login('', 'password');

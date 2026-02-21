@@ -62,6 +62,13 @@ class _OtpPageState extends State<OtpPage> {
         final nav = Provider.of<NavigationService>(context, listen: false);
         nav.navigateToAndClear(RouteNames.enableBiometric);
       }
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth.error ?? 'OTP verification failed'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

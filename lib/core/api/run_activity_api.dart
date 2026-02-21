@@ -13,10 +13,9 @@ class RunActivityApi {
     final allowedKeys = <String>{
       'distance',
       'duration',
+      'avg_pace',
       'calories',
-      'route_data',
-      'started_at',
-      'ended_at',
+      'source',
     };
     final sanitized = <String, dynamic>{};
     for (final entry in data.entries) {

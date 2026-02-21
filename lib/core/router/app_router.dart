@@ -3,7 +3,8 @@ import '../../features/auth/login_page.dart';
 import '../../features/auth/register_page.dart';
 import '../../features/auth/otp_page.dart';
 import '../../features/home/home_page.dart';
-import '../../features/profile/profile_page.dart';
+import '../../features/profile/profile_view_page.dart';
+import '../../features/profile/profile_edit_page.dart';
 import '../../features/profile/profile_setup_page.dart';
 import '../../features/chat/chat_page.dart';
 import '../../features/direct_match/direct_match_page.dart';
@@ -12,6 +13,7 @@ import '../../features/splash/splash_page.dart';
 import '../../features/intro/intro_page.dart';
 import '../../features/auth/enable_biometric_page.dart';
 import '../../features/run_activity/run_activity_page.dart';
+import '../../features/strava/strava_page.dart';
 import 'route_names.dart';
 
 /// Route generator untuk menangani navigation
@@ -69,7 +71,13 @@ class AppRouter {
       case RouteNames.profile:
         return _buildRoute(
           settings: settings,
-          child: const ProfilePage(),
+          child: const ProfileViewPage(),
+        );
+
+      case RouteNames.editProfile:
+        return _buildRoute(
+          settings: settings,
+          child: const ProfileEditPage(),
         );
 
       case RouteNames.directMatch:
@@ -104,6 +112,12 @@ class AppRouter {
         return _buildRoute(
           settings: settings,
           child: const RunActivityPage(),
+        );
+
+      case RouteNames.strava:
+        return _buildRoute(
+          settings: settings,
+          child: const StravaPage(),
         );
 
       default:

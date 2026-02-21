@@ -23,13 +23,45 @@ class ProfileProvider with ChangeNotifier {
   bool get saving => _saving;
   String? get error => _error;
 
-  // Get specific profile fields
-  String? get name => _profile?['name'];
-  String? get email => _profile?['email'];
-  double? get avgPace => _profile?['avg_pace'];
-  int? get preferredDistance => _profile?['preferred_distance'];
-  double? get latitude => _profile?['latitude'];
-  double? get longitude => _profile?['longitude'];
+  // Profile ID & User ID
+  String? get profileId => _profile?['profile_id']?.toString();
+  String? get userId => _profile?['user_id']?.toString();
+
+  // User fields
+  String? get name => _profile?['name']?.toString();
+  String? get email => _profile?['email']?.toString();
+  String? get phoneNumber => _profile?['phone_number']?.toString();
+  String? get gender => _profile?['gender']?.toString();
+  bool get hasProfile => _profile?['has_profile'] == true;
+  bool get isVerified => _profile?['is_verified'] == true;
+  bool get isActive => _profile?['is_active'] == true;
+  String? get createdAt => _profile?['created_at']?.toString();
+  String? get updatedAt => _profile?['updated_at']?.toString();
+
+  // Runner profile fields
+  double? get avgPace {
+    final v = _profile?['avg_pace'];
+    return v is num ? v.toDouble() : null;
+  }
+
+  int? get preferredDistance {
+    final v = _profile?['preferred_distance'];
+    return v is num ? v.toInt() : null;
+  }
+
+  String? get preferredTime => _profile?['preferred_time']?.toString();
+  bool get womenOnlyMode => _profile?['women_only_mode'] == true;
+  String? get image => _profile?['image']?.toString();
+
+  double? get latitude {
+    final v = _profile?['latitude'];
+    return v is num ? v.toDouble() : null;
+  }
+
+  double? get longitude {
+    final v = _profile?['longitude'];
+    return v is num ? v.toDouble() : null;
+  }
 
   // Fetch profile
   Future<void> fetchProfile() async {
@@ -41,7 +73,7 @@ class ProfileProvider with ChangeNotifier {
       final token = await _storage.readToken();
       if (token == null) throw Exception('Token not found');
 
-      _profile = await _api.fetchProfile(token: token);
+      _profile = await _api.getMyProfile(token: token);
       notifyListeners();
     } catch (e) {
       _error = e.toString();
@@ -52,7 +84,7 @@ class ProfileProvider with ChangeNotifier {
     }
   }
 
-  // Update profile
+  // Update profile (runner profile fields)
   Future<bool> updateProfile(Map<String, dynamic> updates) async {
     _saving = true;
     _error = null;
@@ -65,7 +97,7 @@ class ProfileProvider with ChangeNotifier {
       // Merge updates with existing profile
       _profile = {...?_profile, ...updates};
 
-      await _api.createOrUpdateProfile(_profile!, token: token);
+      await _api.createOrUpdateProfile(updates, token: token);
       notifyListeners();
       return true;
     } catch (e) {
@@ -78,26 +110,6 @@ class ProfileProvider with ChangeNotifier {
       _saving = false;
       notifyListeners();
     }
-  }
-
-  // Update name
-  Future<bool> updateName(String name) async {
-    return updateProfile({'name': name});
-  }
-
-  // Update email
-  Future<bool> updateEmail(String email) async {
-    return updateProfile({'email': email});
-  }
-
-  // Update pace
-  Future<bool> updatePace(double pace) async {
-    return updateProfile({'avg_pace': pace});
-  }
-
-  // Update preferred distance
-  Future<bool> updatePreferredDistance(int distance) async {
-    return updateProfile({'preferred_distance': distance});
   }
 
   // Update location

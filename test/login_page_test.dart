@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:run_sync/core/auth/auth_provider.dart';
 import 'package:run_sync/core/auth/auth_service.dart';
-import 'package:run_sync/core/auth/google_sign_in_service.dart';
 import 'package:run_sync/features/auth/login_page.dart';
 import 'package:run_sync/core/router/navigation_service.dart';
 
@@ -55,8 +54,7 @@ class FakeAuthService implements AuthServiceBase {
 void main() {
   testWidgets('LoginPage signs in and updates AuthProvider', (WidgetTester tester) async {
     final authService = FakeAuthService();
-    final googleSignIn = GoogleSignInService();
-    final authProvider = AuthProvider(authService, googleSignIn, null);
+    final authProvider = AuthProvider(authService, null);
     final navService = NavigationService();
 
     await tester.pumpWidget(MultiProvider(

@@ -147,6 +147,11 @@ class NavigationService {
     return navigateTo(RouteNames.profile);
   }
 
+  /// Navigate ke Edit Profile
+  Future<dynamic> navigateToEditProfile() {
+    return navigateTo(RouteNames.editProfile);
+  }
+
   /// Navigate ke Home
   Future<dynamic> navigateToHome() {
     return navigateTo(RouteNames.home);
@@ -155,5 +160,10 @@ class NavigationService {
   /// Navigate to Run Activity
   Future<dynamic> navigateToRunActivity() {
     return navigateTo(RouteNames.runActivity);
+  }
+
+  /// Navigate to Smartwatch Sync
+  Future<dynamic> navigateToStrava() {
+    return navigateTo(RouteNames.strava);
   }
 }

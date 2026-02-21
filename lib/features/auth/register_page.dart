@@ -72,26 +72,13 @@ class _RegisterPageState extends State<RegisterPage> {
         final navService = Provider.of<NavigationService>(context, listen: false);
         navService.navigateToOtp();
       }
-    }
-  }
-
-  Future<void> _handleGoogleSignUp(
-      BuildContext context, AuthProvider auth, NavigationService nav) async {
-    final ok = await auth.loginWithGoogle();
-    if (ok && context.mounted) {
-      // Show beautiful loading screen
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const LoadingPage(message: 'Welcome to RunSync...'),
+    } else if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth.error ?? 'Registration failed'),
+          backgroundColor: Colors.red,
+        ),
       );
-
-      // Wait for loading animation
-      await Future.delayed(const Duration(milliseconds: 1500));
-
-      if (context.mounted) {
-        nav.navigateToHomeAndClear();
-      }
     }
   }
 
@@ -387,66 +374,6 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Divider
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Divider(
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              'OR',
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Divider(
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Google Sign-up button
-                      SizedBox(
-                        height: 48,
-                        child: OutlinedButton(
-                          onPressed: auth.loading
-                              ? null
-                              : () =>
-                                  _handleGoogleSignUp(context, auth, navService),
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            side: BorderSide(
-                              color: Theme.of(context).dividerColor,
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                FontAwesomeIcons.google,
-                                size: 20,
-                                color: Colors.red,
-                              ),
-                              SizedBox(width: 12),
-                              Text('Sign up with Google'),
-                            ],
-                          ),
                         ),
                       ),
                       const SizedBox(height: 12),

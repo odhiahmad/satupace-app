@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'auth_service.dart';
-import 'google_sign_in_service.dart';
 import 'biometric_service.dart';
 import '../services/secure_storage_service.dart';
 import '../services/notification_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthServiceBase _authService;
-  final GoogleSignInService _googleSignIn;
   final BiometricService _biometric;
   final SecureStorageService? _storage;
   final NotificationService? _notificationService;
 
   AuthProvider(
     this._authService,
-    this._googleSignIn,
     this._storage, {
     BiometricService? biometric,
     NotificationService? notificationService,
@@ -105,7 +102,7 @@ class AuthProvider with ChangeNotifier {
     try {
       final res = await _authService.refreshToken(refreshTk);
       if (res['ok'] == true) {
-        final data = res['data'] as Map<String, dynamic>;
+        final data = res['data'] as Map<String, dynamic>? ?? {};
         _token = (data['token'] ?? data['access_token']) as String?;
         final newRefresh = data['refresh_token'] as String?;
         if (newRefresh != null && newRefresh.isNotEmpty) {
@@ -159,7 +156,7 @@ class AuthProvider with ChangeNotifier {
     try {
       final res = await _authService.login(normalizedId, password);
       if (res['ok'] == true) {
-        final data = res['data'] as Map<String, dynamic>;
+        final data = res['data'] as Map<String, dynamic>? ?? {};
         await _handleAuthSuccess(data, normalizedId);
         return true;
       } else {
@@ -248,7 +245,7 @@ class AuthProvider with ChangeNotifier {
     try {
       final res = await _authService.verifyOtp(_pendingOtpPhone!, otpCode);
       if (res['ok'] == true) {
-        final data = res['data'] as Map<String, dynamic>;
+        final data = res['data'] as Map<String, dynamic>? ?? {};
         await _handleAuthSuccess(data, _pendingOtpPhone!);
         _needsOtpVerification = false;
         _needsProfileSetup = true;
@@ -294,52 +291,6 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = 'Unable to resend OTP. Please try again.';
-      notifyListeners();
-      return false;
-    } finally {
-      _loading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Login with Google.
-  Future<bool> loginWithGoogle() async {
-    _loading = true;
-    _error = null;
-    notifyListeners();
-
-    try {
-      final googleUser = await _googleSignIn.signInWithGoogle();
-
-      if (googleUser == null) {
-        _error = 'Google sign-in cancelled';
-        notifyListeners();
-        return false;
-      }
-
-      _token = googleUser['idToken'] ?? googleUser['accessToken'];
-      if (_token == null || (_token as String).isEmpty) {
-        _error = 'Google login failed: token unavailable.';
-        notifyListeners();
-        return false;
-      }
-      _name = googleUser['displayName'] ?? googleUser['email'];
-      _email = googleUser['email'] as String?;
-      _userId = googleUser['uid'] as String?;
-      _isAuthenticated = true;
-
-      if (_token != null && _storage != null) {
-        await _storage.writeToken(_token!);
-      }
-      if (_userId != null) {
-        await _storage?.writeUserId(_userId!);
-      }
-      await _registerFcmToken();
-
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = 'Google login failed. Please try again.';
       notifyListeners();
       return false;
     } finally {
@@ -458,10 +409,6 @@ class AuthProvider with ChangeNotifier {
       if (_token != null) {
         await _authService.logout(_token!);
       }
-    } catch (_) {}
-
-    try {
-      await _googleSignIn.signOut();
     } catch (_) {}
 
     await _clearLocalSession();

@@ -35,6 +35,7 @@ class ProfileApi {
 
   /// Fetch the current user's profile.
   /// GET /profiles/me (JWT required)
+  /// Response: { id, user_id, user: { id, name, email, phone_number, gender, has_profile, is_verified, is_active, created_at, updated_at }, avg_pace, preferred_distance, preferred_time, latitude, longitude, women_only_mode, image, is_active, created_at, updated_at }
   Future<Map<String, dynamic>> getMyProfile({String? token}) async {
     final res = await api.get('/profiles/me', token: token);
     if (res is! Map) return {};
@@ -42,26 +43,32 @@ class ProfileApi {
     final body = Map<String, dynamic>.from(res);
     final user = body['user'] is Map
         ? Map<String, dynamic>.from(body['user'])
-        : body;
-    final profile = body['profile'] is Map
-        ? Map<String, dynamic>.from(body['profile'])
-        : body;
+        : <String, dynamic>{};
 
     return {
-      'id': (user['id'] ?? '').toString(),
+      // Runner profile fields
+      'profile_id': (body['id'] ?? '').toString(),
+      'user_id': (body['user_id'] ?? user['id'] ?? '').toString(),
+
+      // User fields (from nested user object)
       'name': user['name']?.toString(),
       'email': user['email']?.toString(),
       'phone_number': (user['phone_number'] ?? '').toString(),
       'gender': user['gender']?.toString(),
+      'has_profile': user['has_profile'] == true,
       'is_verified': user['is_verified'] == true,
-      'is_active': (profile['is_active'] ?? user['is_active']) == true,
-      'avg_pace': (profile['avg_pace'] as num?)?.toDouble() ?? 0,
-      'preferred_distance': (profile['preferred_distance'] as num?)?.toInt() ?? 0,
-      'preferred_time': (profile['preferred_time'] ?? '').toString(),
-      'latitude': (profile['latitude'] as num?)?.toDouble() ?? 0,
-      'longitude': (profile['longitude'] as num?)?.toDouble() ?? 0,
-      'women_only_mode': profile['women_only_mode'] == true,
-      'image': profile['image']?.toString(),
+
+      // Profile fields (directly on body)
+      'avg_pace': (body['avg_pace'] as num?)?.toDouble() ?? 0,
+      'preferred_distance': (body['preferred_distance'] as num?)?.toInt() ?? 0,
+      'preferred_time': (body['preferred_time'] ?? '').toString(),
+      'latitude': (body['latitude'] as num?)?.toDouble() ?? 0,
+      'longitude': (body['longitude'] as num?)?.toDouble() ?? 0,
+      'women_only_mode': body['women_only_mode'] == true,
+      'image': body['image']?.toString(),
+      'is_active': body['is_active'] == true,
+      'created_at': body['created_at']?.toString(),
+      'updated_at': body['updated_at']?.toString(),
     };
   }
 

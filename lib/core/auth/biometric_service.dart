@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import '../constansts/app_config.dart';
 
 class BiometricService {
   static final BiometricService _instance = BiometricService._internal();
@@ -14,9 +15,9 @@ class BiometricService {
   }
 
   BiometricService._internal()
-      : baseUrl = const String.fromEnvironment('API_BASE_URL', defaultValue: 'https://api.example.com');
+      : baseUrl = AppConfig.apiBaseUrl;
 
-  String _baseUrl = const String.fromEnvironment('API_BASE_URL', defaultValue: 'https://api.example.com');
+  String _baseUrl = AppConfig.apiBaseUrl;
 
   void _setBaseUrl(String url) {
     _baseUrl = url;

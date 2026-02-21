@@ -14,24 +14,84 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String? _location;
+  bool _controllersInitialized = false;
+
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _paceCtrl = TextEditingController();
+  final _distanceCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = Provider.of<ProfileProvider>(context, listen: false);
-      provider.fetchProfile();
+      await provider.fetchProfile();
+      _populateControllers(provider);
     });
+  }
+
+  void _populateControllers(ProfileProvider provider) {
+    if (_controllersInitialized) return;
+    _nameCtrl.text = provider.name ?? '';
+    _emailCtrl.text = provider.email ?? '';
+    _paceCtrl.text = (provider.avgPace ?? 0).toString();
+    _distanceCtrl.text = (provider.preferredDistance ?? 5).toString();
+    _controllersInitialized = true;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _paceCtrl.dispose();
+    _distanceCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveProfile(ProfileProvider provider) async {
+    final updates = <String, dynamic>{
+      'name': _nameCtrl.text.trim(),
+      'email': _emailCtrl.text.trim(),
+    };
+    final pace = double.tryParse(_paceCtrl.text);
+    if (pace != null) updates['avg_pace'] = pace;
+    final dist = int.tryParse(_distanceCtrl.text);
+    if (dist != null) updates['preferred_distance'] = dist;
+
+    final ok = await provider.updateProfile(updates);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok ? 'Profile saved' : 'Failed to save profile'),
+          backgroundColor: ok ? null : Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _captureLocation(ProfileProvider provider) async {
     final locService = Provider.of<LocationService>(context, listen: false);
+
+    // Diagnose first — show specific error if something is wrong
+    final issue = await locService.diagnose();
+    if (issue != null && mounted) {
+      setState(() => _location = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(issue), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     final pos = await locService.getCurrentPosition();
-    if (pos != null) {
+    if (pos != null && mounted) {
       setState(() => _location = '${pos.latitude.toStringAsFixed(6)}, ${pos.longitude.toStringAsFixed(6)}');
       await provider.updateLocation(pos.latitude, pos.longitude);
-    } else {
+    } else if (mounted) {
       setState(() => _location = 'Unavailable');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not get location. Check GPS and try again.'), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -66,6 +126,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             );
+          }
+
+          if (!_controllersInitialized) {
+            _populateControllers(provider);
           }
 
           return Padding(
@@ -153,38 +217,30 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 28),
                   TextFormField(
-                    initialValue: provider.name ?? '',
+                    controller: _nameCtrl,
                     decoration: const InputDecoration(labelText: 'Name'),
-                    onChanged: (v) => provider.updateName(v),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
-                    initialValue: provider.email ?? '',
+                    controller: _emailCtrl,
                     decoration: const InputDecoration(labelText: 'Email'),
-                    onChanged: (v) => provider.updateEmail(v),
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: TextFormField(
-                          initialValue: (provider.avgPace ?? 0).toString(),
+                          controller: _paceCtrl,
                           decoration: const InputDecoration(labelText: 'Avg Pace (min/km)'),
-                          onChanged: (v) {
-                            final pace = double.tryParse(v);
-                            if (pace != null) provider.updatePace(pace);
-                          },
+                          keyboardType: TextInputType.number,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextFormField(
-                          initialValue: (provider.preferredDistance ?? 5).toString(),
+                          controller: _distanceCtrl,
                           decoration: const InputDecoration(labelText: 'Preferred Dist. (km)'),
-                          onChanged: (v) {
-                            final distance = int.tryParse(v);
-                            if (distance != null) provider.updatePreferredDistance(distance);
-                          },
+                          keyboardType: TextInputType.number,
                         ),
                       ),
                     ],
@@ -253,12 +309,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: ElevatedButton(
                       onPressed: provider.saving
                           ? null
-                          : () {
-                              // Changes are auto-saved via onChange
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Profile saved')),
-                              );
-                            },
+                          : () => _saveProfile(provider),
                       child: provider.saving
                           ? const SizedBox(
                               height: 20,
