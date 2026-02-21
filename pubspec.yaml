@@ -1,0 +1,28 @@
+name: run_sync
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.0.6
+  http: ^1.6.0
+  firebase_core: any
+  firebase_messaging: any
+  firebase_auth: any
+  google_sign_in: any
+  geolocator: any
+  flutter_secure_storage: ^10.0.0
+  font_awesome_flutter: ^10.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

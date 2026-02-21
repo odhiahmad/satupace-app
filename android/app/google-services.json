@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "701125601827",
+    "project_id": "run-sync-a470f",
+    "storage_bucket": "run-sync-a470f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:701125601827:android:00498974eb0c4a27731f96",
+        "android_client_info": {
+          "package_name": "com.runsync.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6g5f730OtfAWsKFSLFpTvAB4vzBEwCfU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
