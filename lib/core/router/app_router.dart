@@ -1,17 +1,35 @@
 import 'package:flutter/material.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/register_page.dart';
+import '../../features/auth/otp_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/profile/profile_page.dart';
+import '../../features/profile/profile_setup_page.dart';
 import '../../features/chat/chat_page.dart';
 import '../../features/direct_match/direct_match_page.dart';
 import '../../features/group_run/group_run_page.dart';
+import '../../features/splash/splash_page.dart';
+import '../../features/intro/intro_page.dart';
+import '../../features/auth/enable_biometric_page.dart';
+import '../../features/run_activity/run_activity_page.dart';
 import 'route_names.dart';
 
 /// Route generator untuk menangani navigation
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case RouteNames.splash:
+        return _buildRoute(
+          settings: settings,
+          child: const SplashPage(),
+        );
+
+      case RouteNames.intro:
+        return _buildRoute(
+          settings: settings,
+          child: const IntroPage(),
+        );
+
       case RouteNames.login:
         return _buildRoute(
           settings: settings,
@@ -22,6 +40,24 @@ class AppRouter {
         return _buildRoute(
           settings: settings,
           child: const RegisterPage(),
+        );
+
+      case RouteNames.otp:
+        return _buildRoute(
+          settings: settings,
+          child: const OtpPage(),
+        );
+
+      case RouteNames.enableBiometric:
+        return _buildRoute(
+          settings: settings,
+          child: const EnableBiometricPage(),
+        );
+
+      case RouteNames.profileSetup:
+        return _buildRoute(
+          settings: settings,
+          child: const ProfileSetupPage(),
         );
 
       case RouteNames.home:
@@ -64,10 +100,16 @@ class AppRouter {
           child: const GroupRunPage(),
         );
 
+      case RouteNames.runActivity:
+        return _buildRoute(
+          settings: settings,
+          child: const RunActivityPage(),
+        );
+
       default:
         return _buildRoute(
           settings: settings,
-          child: const HomePage(),
+          child: const SplashPage(),
         );
     }
   }

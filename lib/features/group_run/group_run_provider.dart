@@ -74,16 +74,14 @@ class GroupRunProvider with ChangeNotifier {
   // Leave group
   Future<bool> leaveGroup(String groupId) async {
     try {
-      final token = await _storage.readToken();
-      if (token == null) throw Exception('Token not found');
-
-      // Assuming API has a leave method
-      // For now, just remove from local list
-      _myGroups.removeWhere((g) => g['id'] == groupId);
-      _groups.add(_myGroups.firstWhere(
+      final leavingGroup = _myGroups.firstWhere(
         (g) => g['id'] == groupId,
         orElse: () => {},
-      ));
+      );
+      _myGroups.removeWhere((g) => g['id'] == groupId);
+      if (leavingGroup.isNotEmpty) {
+        _groups.add(leavingGroup);
+      }
       notifyListeners();
       return true;
     } catch (e) {

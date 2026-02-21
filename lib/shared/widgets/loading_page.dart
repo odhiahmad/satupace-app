@@ -20,13 +20,6 @@ class _LoadingPageState extends State<LoadingPage>
   late AnimationController _pulseController;
   late AnimationController _bobController;
 
-  final List<IconData> _icons = [
-    FontAwesomeIcons.person,
-    FontAwesomeIcons.heartPulse,
-    FontAwesomeIcons.dumbbell,
-  ];
-  int _currentIconIndex = 0;
-
   @override
   void initState() {
     super.initState();
@@ -48,18 +41,6 @@ class _LoadingPageState extends State<LoadingPage>
       duration: const Duration(seconds: 3),
       vsync: this,
     )..repeat(reverse: true);
-
-    // Change icon every 2 seconds
-    Future.delayed(const Duration(seconds: 2), _cycleIcon);
-  }
-
-  void _cycleIcon() {
-    if (mounted) {
-      setState(() {
-        _currentIconIndex = (_currentIconIndex + 1) % _icons.length;
-      });
-      Future.delayed(const Duration(seconds: 2), _cycleIcon);
-    }
   }
 
   @override
@@ -72,8 +53,8 @@ class _LoadingPageState extends State<LoadingPage>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         body: Container(
           decoration: BoxDecoration(
@@ -81,8 +62,8 @@ class _LoadingPageState extends State<LoadingPage>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppTheme.darkBackground.withOpacity(0.95),
-                AppTheme.darkBackground.withOpacity(0.98),
+                AppTheme.darkBg.withValues(alpha: 0.95),
+                AppTheme.darkBg.withValues(alpha: 0.98),
               ],
             ),
           ),
@@ -116,14 +97,14 @@ class _LoadingPageState extends State<LoadingPage>
                               boxShadow: [
                                 BoxShadow(
                                   color: AppTheme.neonLime
-                                      .withOpacity(_pulseController.value * 0.6),
+                                      .withValues(alpha: _pulseController.value * 0.6),
                                   blurRadius: 30,
                                   spreadRadius: 5,
                                 ),
                               ],
                             ),
                             child: Icon(
-                              _icons[_currentIconIndex],
+                              FontAwesomeIcons.heartPulse,
                               size: 60,
                               color: AppTheme.neonLime,
                             ),
@@ -168,7 +149,7 @@ class _LoadingPageState extends State<LoadingPage>
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: AppTheme.neonLime
-                                  .withOpacity(opacity.clamp(0, 1)),
+                                  .withValues(alpha: opacity.clamp(0, 1)),
                             ),
                           );
                         },

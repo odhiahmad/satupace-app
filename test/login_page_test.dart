@@ -9,9 +9,41 @@ import 'package:run_sync/core/router/navigation_service.dart';
 
 class FakeAuthService implements AuthServiceBase {
   @override
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String identifier, String password) async {
     await Future.delayed(const Duration(milliseconds: 10));
-    return {'ok': true, 'data': {'token': 'fake-token', 'name': 'Widget Runner'}};
+    return {
+      'ok': true,
+      'data': {
+        'token': 'fake-token',
+        'refresh_token': 'fake-refresh',
+        'name': 'Widget Runner',
+      }
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> register(String name, String email, String phoneNumber, String gender, String password) async {
+    return {'ok': true, 'data': {'message': 'OTP sent'}};
+  }
+
+  @override
+  Future<Map<String, dynamic>> verifyOtp(String phoneNumber, String otpCode) async {
+    return {'ok': true, 'data': {'token': 'verified', 'refresh_token': 'r'}};
+  }
+
+  @override
+  Future<Map<String, dynamic>> resendOtp(String phoneNumber) async {
+    return {'ok': true, 'data': {'message': 'OTP resent'}};
+  }
+
+  @override
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    return {'ok': true, 'data': {'token': 'refreshed'}};
+  }
+
+  @override
+  Future<bool> registerFcmToken(String token, String fcmToken) async {
+    return true;
   }
 
   @override
@@ -44,7 +76,7 @@ void main() {
     await tester.pump();
 
     // Wait for async login
-    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(seconds: 2));
 
     expect(authProvider.isAuthenticated, isTrue);
     expect(authProvider.name, equals('Widget Runner'));

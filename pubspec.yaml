@@ -18,6 +18,8 @@ dependencies:
   geolocator: any
   flutter_secure_storage: ^10.0.0
   font_awesome_flutter: ^10.0.0
+  local_auth: ^2.3.0
+  shared_preferences: ^2.3.0
 
 dev_dependencies:
   flutter_test:

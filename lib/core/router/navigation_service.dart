@@ -19,7 +19,9 @@ class NavigationService {
     String routeName, {
     Object? arguments,
   }) {
-    return navigatorKey.currentState!.pushNamed(
+    final state = navigatorKey.currentState;
+    if (state == null) return Future.value(null);
+    return state.pushNamed(
       routeName,
       arguments: arguments,
     );
@@ -30,36 +32,92 @@ class NavigationService {
     String routeName, {
     Object? arguments,
   }) {
-    return navigatorKey.currentState!.pushReplacementNamed(
+    final state = navigatorKey.currentState;
+    if (state == null) return Future.value(null);
+    return state.pushReplacementNamed(
       routeName,
       arguments: arguments,
     );
   }
 
-  /// Navigasi ke home screen dan clear stack
-  Future<dynamic> navigateToHomeAndClear() {
-    return navigatorKey.currentState!.pushNamedAndRemoveUntil(
-      RouteNames.home,
+  /// Navigasi dan clear semua stack
+  Future<dynamic> navigateToAndClear(String routeName) {
+    final state = navigatorKey.currentState;
+    if (state == null) return Future.value(null);
+    return state.pushNamedAndRemoveUntil(
+      routeName,
       (route) => false,
     );
   }
 
+  /// Navigasi ke home screen dan clear stack
+  Future<dynamic> navigateToHomeAndClear() {
+    return navigateToAndClear(RouteNames.home);
+  }
+
   /// Pop current route
   void goBack() {
-    return navigatorKey.currentState!.pop();
+    final state = navigatorKey.currentState;
+    if (state == null) return;
+    state.pop();
   }
 
   /// Pop sampai route tertentu
   void popUntil(String routeName) {
-    return navigatorKey.currentState!.popUntil(
+    final state = navigatorKey.currentState;
+    if (state == null) return;
+    state.popUntil(
       ModalRoute.withName(routeName),
     );
   }
 
   /// Check apakah bisa pop (ada route sebelumnya)
   bool canPop() {
-    return navigatorKey.currentState!.canPop();
+    final state = navigatorKey.currentState;
+    if (state == null) return false;
+    return state.canPop();
   }
+
+  // --- Onboarding Navigation ---
+
+  /// Navigate to intro page and clear stack
+  Future<dynamic> navigateToIntroAndClear() {
+    return navigateToAndClear(RouteNames.intro);
+  }
+
+  /// Navigate to OTP verification
+  Future<dynamic> navigateToOtp() {
+    return navigateToAndReplace(RouteNames.otp);
+  }
+
+  /// Navigate to biometric enable screen
+  Future<dynamic> navigateToBiometric() {
+    return navigateToAndReplace(RouteNames.enableBiometric);
+  }
+
+  /// Navigate to profile setup
+  Future<dynamic> navigateToProfileSetup() {
+    return navigateToAndReplace(RouteNames.profileSetup);
+  }
+
+  // --- Auth Navigation ---
+
+  /// Navigate ke Login
+  Future<dynamic> navigateToLogin() {
+    return navigateToAndReplace(RouteNames.login);
+  }
+
+  /// Navigate to Login and clear stack
+  Future<dynamic> navigateToLoginAndClear() {
+    return navigateToAndClear(RouteNames.login);
+  }
+
+  /// Navigate to Register
+  Future<dynamic> navigateToRegister() {
+    return navigateToAndReplace(RouteNames.register);
+  }
+
+  // --- Feature Navigation ---
 
   /// Navigate ke Direct Match (Matches tab)
   Future<dynamic> navigateToMatches() {
@@ -94,8 +152,8 @@ class NavigationService {
     return navigateTo(RouteNames.home);
   }
 
-  /// Navigate ke Login
-  Future<dynamic> navigateToLogin() {
-    return navigateToAndReplace(RouteNames.login);
+  /// Navigate to Run Activity
+  Future<dynamic> navigateToRunActivity() {
+    return navigateTo(RouteNames.runActivity);
   }
 }

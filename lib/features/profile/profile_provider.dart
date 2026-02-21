@@ -65,7 +65,7 @@ class ProfileProvider with ChangeNotifier {
       // Merge updates with existing profile
       _profile = {...?_profile, ...updates};
 
-      await _api.updateProfile(_profile!, token: token);
+      await _api.createOrUpdateProfile(_profile!, token: token);
       notifyListeners();
       return true;
     } catch (e) {

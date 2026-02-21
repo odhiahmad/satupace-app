@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -9,6 +10,7 @@ import 'core/router/route_names.dart';
 import 'core/services/app_services.dart';
 import 'core/auth/auth_provider.dart';
 import 'core/auth/auth_service.dart';
+import 'core/auth/biometric_service.dart';
 import 'core/auth/google_sign_in_service.dart';
 import 'features/direct_match/direct_match_provider.dart';
 import 'features/chat/chat_provider.dart';
@@ -26,13 +28,13 @@ Future<void> main() async {
   
   // Initialize core services
   final storage = SecureStorageService();
-  final initialToken = await storage.readToken();
   
   // Initialize auth services
   final authService = AuthService();
   final googleSignIn = GoogleSignInService();
+  final biometricService = BiometricService();
   
-  // Initialize remaining services (can be lazy loaded later)
+  // Initialize remaining services
   final apiService = ApiService(secureStorage: storage);
   final notificationService = NotificationService();
   
@@ -40,7 +42,9 @@ Future<void> main() async {
   notificationService.init().then((_) {
     // Notification service ready
   }).catchError((e) {
-    print('Notification service init error: $e');
+    if (kDebugMode) {
+      debugPrint('Notification service init error: $e');
+    }
   });
   
   // Initialize AppServices
@@ -56,8 +60,9 @@ Future<void> main() async {
       appServices: appServices,
       authService: authService,
       googleSignIn: googleSignIn,
+      biometricService: biometricService,
+      notificationService: notificationService,
       storage: storage,
-      initialToken: initialToken,
     ),
   );
 }
@@ -66,8 +71,9 @@ class MyApp extends StatelessWidget {
   final AppServices appServices;
   final AuthService authService;
   final GoogleSignInService googleSignIn;
+  final BiometricService biometricService;
+  final NotificationService notificationService;
   final SecureStorageService storage;
-  final String? initialToken;
   final NavigationService _navService = NavigationService();
 
   MyApp({
@@ -75,8 +81,9 @@ class MyApp extends StatelessWidget {
     required this.appServices,
     required this.authService,
     required this.googleSignIn,
+    required this.biometricService,
+    required this.notificationService,
     required this.storage,
-    this.initialToken,
   });
 
   @override
@@ -86,6 +93,7 @@ class MyApp extends StatelessWidget {
         // Core Services (singleton, never rebuild)
         Provider<AppServices>.value(value: appServices),
         Provider<NavigationService>.value(value: _navService),
+        Provider<SecureStorageService>.value(value: storage),
 
         // Auth (can rebuild when auth state changes)
         ChangeNotifierProvider(
@@ -93,7 +101,8 @@ class MyApp extends StatelessWidget {
             authService,
             googleSignIn,
             storage,
-            initialToken: initialToken,
+            biometric: biometricService,
+            notificationService: notificationService,
           ),
         ),
 
@@ -142,8 +151,8 @@ class _MaterialAppBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<AuthProvider, AppTheme>(
-      builder: (context, auth, theme, _) => MaterialApp(
+    return Consumer<AppTheme>(
+      builder: (context, theme, _) => MaterialApp(
         title: 'Run Sync',
         debugShowCheckedModeBanner: false,
         theme: theme.lightTheme,
@@ -151,7 +160,7 @@ class _MaterialAppBuilder extends StatelessWidget {
         themeMode: theme.mode,
         navigatorKey: navService.navigatorKey,
         onGenerateRoute: AppRouter.generateRoute,
-        initialRoute: auth.isAuthenticated ? RouteNames.home : RouteNames.register,
+        initialRoute: RouteNames.splash,
       ),
     );
   }

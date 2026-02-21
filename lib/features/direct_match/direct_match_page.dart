@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../shared/components/card_tile.dart';
 import './direct_match_provider.dart';
@@ -27,7 +28,13 @@ class _DirectMatchPageState extends State<DirectMatchPage> {
         padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
-            const Text('Matches', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Row(
+              children: [
+                const FaIcon(FontAwesomeIcons.heart, color: Color(0xFFB8FF00), size: 24),
+                const SizedBox(width: 12),
+                const Text('Matches', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              ],
+            ),
             const SizedBox(height: 12),
             Expanded(
               child: Consumer<DirectMatchProvider>(
@@ -63,20 +70,22 @@ class _DirectMatchPageState extends State<DirectMatchPage> {
                     itemBuilder: (context, i) {
                       final m = provider.matches[i];
                       return CardTile(
-                        title: m['name'] ?? 'Unknown',
-                        subtitle: 'Preferred: ${m['preferred'] ?? ''}',
+                        title: m['display_name'] ?? m['name'] ?? 'Unknown',
+                        subtitle: 'Preferred: ${m['preferred_distance'] ?? 0} km',
                         onTap: () {
                           showDialog(
                             context: context,
                             builder: (_) => AlertDialog(
-                              title: Text(m['name'] ?? 'Runner'),
+                              title: Text(m['display_name'] ?? m['name'] ?? 'Runner'),
                               content: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Preferred Distance: ${m['preferred'] ?? 'N/A'} km'),
+                                  Text('Preferred Distance: ${m['preferred_distance'] ?? 'N/A'} km'),
                                   const SizedBox(height: 8),
                                   Text('Avg Pace: ${m['avg_pace'] ?? 'N/A'} min/km'),
+                                  const SizedBox(height: 8),
+                                  Text('Status: ${m['status'] ?? 'pending'}'),
                                 ],
                               ),
                               actions: [
@@ -91,13 +100,23 @@ class _DirectMatchPageState extends State<DirectMatchPage> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            TextButton(
+                            OutlinedButton.icon(
                               onPressed: () => provider.rejectMatch(m['id'] ?? ''),
-                              child: const Text('Reject'),
+                              icon: const FaIcon(FontAwesomeIcons.xmark, size: 14),
+                              label: const Text('Decline'),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.red),
+                              ),
                             ),
-                            ElevatedButton(
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
                               onPressed: () => provider.acceptMatch(m['id'] ?? ''),
-                              child: const Text('Accept'),
+                              icon: const FaIcon(FontAwesomeIcons.check, size: 14),
+                              label: const Text('Accept'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFB8FF00),
+                                foregroundColor: Colors.black87,
+                              ),
                             ),
                           ],
                         ),

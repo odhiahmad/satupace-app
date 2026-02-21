@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../auth/auth_provider.dart';
 import '../../shared/widgets/theme_toggle.dart';
@@ -63,7 +64,7 @@ class _HomePageState extends State<HomePage> {
         actions: [
           const ThemeToggle(),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const FaIcon(FontAwesomeIcons.rightFromBracket, size: 20),
             onPressed: () async {
               await auth.logout();
               navService.navigateToLogin();
@@ -77,10 +78,10 @@ class _HomePageState extends State<HomePage> {
         currentIndex: _index,
         onTap: _handleTabChange,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_search), label: 'Matches'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Chats'),
-          BottomNavigationBarItem(icon: Icon(Icons.people_outline), label: 'Groups'),
+          BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.house, size: 20), label: 'Home'),
+          BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.userGroup, size: 20), label: 'Matches'),
+          BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.comments, size: 20), label: 'Chats'),
+          BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.users, size: 20), label: 'Groups'),
         ],
       ),
     );
@@ -110,7 +111,7 @@ class _HomeView extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   AppTheme.darkSurface,
-                  AppTheme.darkSurfaceVariant.withOpacity(0.8),
+                  AppTheme.darkSurfaceVariant.withValues(alpha: 0.8),
                 ],
               ),
             ),
@@ -153,7 +154,7 @@ class _HomeView extends StatelessWidget {
                             colors: [AppTheme.neonLime, AppTheme.neonLimeDark],
                           ),
                         ),
-                        child: const Icon(Icons.person, color: Colors.black87),
+                        child: const FaIcon(FontAwesomeIcons.user, color: Colors.black87),
                       ),
                     ),
                   ],
@@ -165,19 +166,19 @@ class _HomeView extends StatelessWidget {
                     _StatCard(
                       label: 'Runs',
                       value: '12',
-                      icon: Icons.directions_run,
+                      icon: FontAwesomeIcons.personRunning,
                     ),
                     const SizedBox(width: 12),
                     _StatCard(
                       label: 'Distance',
                       value: '45km',
-                      icon: Icons.map,
+                      icon: FontAwesomeIcons.mapLocationDot,
                     ),
                     const SizedBox(width: 12),
                     _StatCard(
                       label: 'Active',
                       value: '7d',
-                      icon: Icons.local_fire_department,
+                      icon: FontAwesomeIcons.fire,
                     ),
                   ],
                 ),
@@ -202,7 +203,7 @@ class _HomeView extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _ActionButton(
-                        icon: Icons.add_circle_outline,
+                        icon: FontAwesomeIcons.circlePlay,
                         label: 'Start Run',
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -214,7 +215,7 @@ class _HomeView extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _ActionButton(
-                        icon: Icons.group_add,
+                        icon: FontAwesomeIcons.userPlus,
                         label: 'Find Runners',
                         onPressed: () {
                           onNavigate?.call(1); // Navigate to Direct Match
@@ -228,7 +229,7 @@ class _HomeView extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _ActionButton(
-                        icon: Icons.event,
+                        icon: FontAwesomeIcons.calendarDays,
                         label: 'Events',
                         onPressed: () {
                           showDialog(
@@ -250,7 +251,7 @@ class _HomeView extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _ActionButton(
-                        icon: Icons.groups,
+                        icon: FontAwesomeIcons.peopleGroup,
                         label: 'My Groups',
                         onPressed: () {
                           onNavigate?.call(3); // Navigate to Group Runs
@@ -325,17 +326,17 @@ class _StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppTheme.darkSurfaceVariant.withOpacity(0.5),
+          color: AppTheme.darkSurfaceVariant.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AppTheme.neonLime.withOpacity(0.2),
+            color: AppTheme.neonLime.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: AppTheme.neonLime, size: 20),
+            FaIcon(icon, color: AppTheme.neonLime, size: 20),
             const SizedBox(height: 8),
             Text(
               value,
@@ -389,7 +390,7 @@ class _ActionButton extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.neonLime.withOpacity(0.3),
+              color: AppTheme.neonLime.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -398,7 +399,7 @@ class _ActionButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.black87, size: 28),
+            FaIcon(icon, color: Colors.black87, size: 28),
             const SizedBox(height: 4),
             Text(
               label,
@@ -435,10 +436,10 @@ class _RunnerCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.darkSurfaceVariant.withOpacity(0.6),
+        color: AppTheme.darkSurfaceVariant.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.neonLime.withOpacity(0.15),
+          color: AppTheme.neonLime.withValues(alpha: 0.15),
           width: 1,
         ),
       ),
@@ -453,7 +454,7 @@ class _RunnerCard extends StatelessWidget {
                 colors: [AppTheme.neonLime, AppTheme.neonLimeDark],
               ),
             ),
-            child: const Icon(Icons.person, color: Colors.black87, size: 24),
+            child: const FaIcon(FontAwesomeIcons.user, color: Colors.black87, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -491,10 +492,10 @@ class _RunnerCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppTheme.neonLime.withOpacity(0.15),
+              color: AppTheme.neonLime.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: AppTheme.neonLime.withOpacity(0.3),
+                color: AppTheme.neonLime.withValues(alpha: 0.3),
               ),
             ),
             child: Text(

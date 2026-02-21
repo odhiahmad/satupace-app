@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart';
+import '../../core/router/route_names.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/router/navigation_service.dart';
 import '../../shared/widgets/theme_toggle.dart';
@@ -108,7 +110,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             child: Icon(
-                              Icons.directions_run,
+                              FontAwesomeIcons.personRunning,
                               size: 60,
                               color: isDark ? AppTheme.darkBg : Colors.white,
                             ),
@@ -155,13 +157,13 @@ class _LoginPageState extends State<LoginPage> {
                           padding: const EdgeInsets.all(12),
                           margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
+                            color: Colors.red.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.withOpacity(0.3)),
+                            border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                              const FaIcon(FontAwesomeIcons.circleExclamation, color: Colors.red, size: 20),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
@@ -171,7 +173,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               InkWell(
                                 onTap: () => auth.clearError(),
-                                child: const Icon(Icons.close, color: Colors.red, size: 18),
+                                child: const FaIcon(FontAwesomeIcons.xmark, color: Colors.red, size: 18),
                               ),
                             ],
                           ),
@@ -189,7 +191,10 @@ class _LoginPageState extends State<LoginPage> {
                               decoration: InputDecoration(
                                 labelText: 'Email',
                                 hintText: 'runner@example.com',
-                                prefixIcon: const Icon(Icons.email_outlined),
+                                prefixIcon: const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: FaIcon(FontAwesomeIcons.envelope, size: 18),
+                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -210,7 +215,10 @@ class _LoginPageState extends State<LoginPage> {
                               decoration: InputDecoration(
                                 labelText: 'Password',
                                 hintText: '••••••••',
-                                prefixIcon: const Icon(Icons.lock_outlined),
+                                prefixIcon: const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: FaIcon(FontAwesomeIcons.lock, size: 18),
+                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -303,7 +311,7 @@ class _LoginPageState extends State<LoginPage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                Icons.g_mobiledata,
+                                FontAwesomeIcons.google,
                                 size: 20,
                                 color: Colors.red,
                               ),
@@ -318,29 +326,54 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Footer
                   Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Don\'t have an account? ',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[500],
-                            ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.neonLime.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppTheme.neonLime.withValues(alpha: 0.2),
+                            width: 1,
                           ),
-                          GestureDetector(
-                            onTap: () =>
-                                navService.navigateTo('register'),
-                            child: Text(
-                              'Sign up',
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'New here? ',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppTheme.neonLime,
-                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[500],
+                                fontSize: 12,
                               ),
                             ),
-                          ),
-                        ],
+                            GestureDetector(
+                              onTap: () => navService.navigateTo(RouteNames.register),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Create Account',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppTheme.neonLime,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const FaIcon(
+                                    FontAwesomeIcons.arrowRight,
+                                    color: Color(0xFFB8FF00),
+                                    size: 12,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

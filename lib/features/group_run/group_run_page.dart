@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../shared/components/card_tile.dart';
 import './group_run_provider.dart';
@@ -27,7 +28,13 @@ class _GroupRunPageState extends State<GroupRunPage> {
         padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
-            const Text('Group Runs', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Row(
+              children: [
+                const FaIcon(FontAwesomeIcons.peopleGroup, color: Color(0xFFB8FF00), size: 24),
+                const SizedBox(width: 12),
+                const Text('Group Runs', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              ],
+            ),
             const SizedBox(height: 12),
             Expanded(
               child: Consumer<GroupRunProvider>(
@@ -64,7 +71,7 @@ class _GroupRunPageState extends State<GroupRunPage> {
                       final g = provider.groups[i];
                       return CardTile(
                         title: g['name'] ?? 'Unknown',
-                        subtitle: 'Scheduled at ${g['scheduled'] ?? ''} • ${g['distance'] ?? ''}',
+                        subtitle: 'Scheduled at ${g['scheduled_at'] ?? ''} • ${g['preferred_distance'] ?? 0} km',
                         onTap: () {
                           showDialog(
                             context: context,
@@ -74,9 +81,11 @@ class _GroupRunPageState extends State<GroupRunPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Distance: ${g['distance'] ?? 'N/A'} km'),
+                                  Text('Distance: ${g['preferred_distance'] ?? 'N/A'} km'),
                                   const SizedBox(height: 8),
-                                  Text('Scheduled: ${g['scheduled'] ?? 'N/A'}'),
+                                  Text('Scheduled: ${g['scheduled_at'] ?? 'N/A'}'),
+                                  const SizedBox(height: 8),
+                                  Text('Avg Pace: ${g['avg_pace'] ?? 0} min/km'),
                                   const SizedBox(height: 8),
                                   Text('Members: ${g['members_count'] ?? 'N/A'}'),
                                 ],
@@ -90,9 +99,14 @@ class _GroupRunPageState extends State<GroupRunPage> {
                             ),
                           );
                         },
-                        trailing: ElevatedButton(
+                        trailing: ElevatedButton.icon(
                           onPressed: () => provider.joinGroup(g['id'] ?? ''),
-                          child: const Text('Join'),
+                          icon: const FaIcon(FontAwesomeIcons.userPlus, size: 14),
+                          label: const Text('Join'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFB8FF00),
+                            foregroundColor: Colors.black87,
+                          ),
                         ),
                       );
                     },

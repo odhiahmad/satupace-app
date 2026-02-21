@@ -3,6 +3,12 @@ class RouteNames {
   // Auth Routes
   static const String login = '/login';
   static const String register = '/register';
+  static const String otp = '/otp';
+
+  // Onboarding
+  static const String intro = '/intro';
+  static const String profileSetup = '/profile-setup';
+  static const String enableBiometric = '/enable-biometric';
 
   // Main App Routes
   static const String home = '/home';
@@ -11,6 +17,7 @@ class RouteNames {
   static const String chat = '/chat';
   static const String chatThread = '/chat-thread';
   static const String groupRun = '/group-run';
+  static const String runActivity = '/run-activity';
 
   // Splash screen
   static const String splash = '/';

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../shared/components/card_tile.dart';
 import '../../core/router/navigation_service.dart';
 import 'package:provider/provider.dart';
@@ -64,9 +65,9 @@ class _ChatPageState extends State<ChatPage> {
                     itemBuilder: (context, i) {
                       final c = provider.chats[i];
                       return CardTile(
-                        title: c['name'] ?? 'Unknown',
+                        title: c['peer_name'] ?? c['name'] ?? 'Unknown',
                         subtitle: c['last_message'] ?? '',
-                        avatarLabel: (c['name'] ?? 'U')[0],
+                        avatarLabel: ((c['peer_name'] ?? c['name'] ?? 'U') as String)[0],
                         onTap: () {
                           final navService = Provider.of<NavigationService>(context, listen: false);
                           navService.navigateToChatThread(c['id'] ?? '');
@@ -119,7 +120,7 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
       appBar: AppBar(
         title: Text(widget.chatId),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 20),
           onPressed: () => navService.goBack(),
         ),
       ),
@@ -163,7 +164,7 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
                     ),
                     IconButton(
                       onPressed: () => _send(provider),
-                      icon: const Icon(Icons.send),
+                      icon: const FaIcon(FontAwesomeIcons.paperPlane, size: 20),
                     )
                   ],
                 ),
