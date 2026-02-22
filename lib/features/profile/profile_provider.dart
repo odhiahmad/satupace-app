@@ -10,7 +10,7 @@ class ProfileProvider with ChangeNotifier {
   bool _loading = false;
   bool _saving = false;
   String? _error;
-  bool _hasTriedLoadingCache = false;
+  bool _loadedFromApi = false;
 
   ProfileProvider({
     required ProfileApi api,
@@ -64,25 +64,31 @@ class ProfileProvider with ChangeNotifier {
     return v is num ? v.toDouble() : null;
   }
 
-  // Fetch profile
-  Future<void> fetchProfile() async {
-    // If already loaded, don't load again
-    if (_profile != null) {
-      return;
-    }
+  /// Clear in-memory profile — call this on logout so next login fetches fresh data.
+  void clearProfile() {
+    _profile = null;
+    _error = null;
+    _loading = false;
+    _saving = false;
+    _loadedFromApi = false;
+    notifyListeners();
+  }
 
-    // Try loading from cache first (only once)
-    if (!_hasTriedLoadingCache) {
-      _hasTriedLoadingCache = true;
+  /// Fetch profile: shows cached data immediately, then always refreshes from API.
+  /// Subsequent calls are no-ops once loaded from API (use [refreshProfile] to force).
+  Future<void> fetchProfile() async {
+    // Already loaded fresh from API — skip
+    if (_loadedFromApi) return;
+
+    // Show cached data immediately while we fetch from API
+    if (_profile == null) {
       final cachedProfile = await _storage.readProfileData();
       if (cachedProfile != null) {
         _profile = cachedProfile;
         notifyListeners();
-        return;
       }
     }
 
-    // If no cache, fetch from API
     _loading = true;
     _error = null;
     notifyListeners();
@@ -92,25 +98,23 @@ class ProfileProvider with ChangeNotifier {
       if (token == null) throw Exception('Token not found');
 
       _profile = await _api.getMyProfile(token: token);
-      // Cache the profile data
+      _loadedFromApi = true;
       await _storage.writeProfileData(_profile!);
-      // Cache name so other pages (e.g. chat) can read it without Provider
       final nameVal = _profile?['name']?.toString();
       if (nameVal != null && nameVal.isNotEmpty) {
         await _storage.writeUserName(nameVal);
       }
-      notifyListeners();
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
     } finally {
       _loading = false;
       notifyListeners();
     }
   }
 
-  // Refresh profile from API (bypass cache)
+  /// Force refresh from API (bypass cache and previous load state).
   Future<void> refreshProfile() async {
+    _loadedFromApi = false;
     _loading = true;
     _error = null;
     notifyListeners();
@@ -120,24 +124,21 @@ class ProfileProvider with ChangeNotifier {
       if (token == null) throw Exception('Token not found');
 
       _profile = await _api.getMyProfile(token: token);
-      // Cache the profile data
+      _loadedFromApi = true;
       await _storage.writeProfileData(_profile!);
-      // Cache name so other pages (e.g. chat) can read it without Provider
       final nameVal = _profile?['name']?.toString();
       if (nameVal != null && nameVal.isNotEmpty) {
         await _storage.writeUserName(nameVal);
       }
-      notifyListeners();
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
     } finally {
       _loading = false;
       notifyListeners();
     }
   }
 
-  // Update profile (runner profile fields)
+  /// Update profile (runner profile fields).
   Future<bool> updateProfile(Map<String, dynamic> updates) async {
     _saving = true;
     _error = null;
@@ -147,7 +148,6 @@ class ProfileProvider with ChangeNotifier {
       final token = await _storage.readToken();
       if (token == null) throw Exception('Token not found');
 
-      // POST /profiles handles both create and update (upsert)
       // Backend expects ALL fields — merge current profile with updates
       final merged = <String, dynamic>{
         'avg_pace': _profile?['avg_pace'] ?? 0,
@@ -160,11 +160,8 @@ class ProfileProvider with ChangeNotifier {
       };
       await _api.createOrUpdateProfile(merged, token: token);
 
-      // Update in-memory profile with the merged data
       _profile = <String, dynamic>{...?_profile, ...merged};
-      // Persist updated profile to cache
       await _storage.writeProfileData(_profile!);
-      // Persist updated name if it changed
       final nameVal = _profile?['name']?.toString();
       if (nameVal != null && nameVal.isNotEmpty) {
         await _storage.writeUserName(nameVal);
@@ -181,15 +178,12 @@ class ProfileProvider with ChangeNotifier {
     }
   }
 
-  // Update location
+  /// Update location.
   Future<bool> updateLocation(double latitude, double longitude) async {
-    return updateProfile({
-      'latitude': latitude,
-      'longitude': longitude,
-    });
+    return updateProfile({'latitude': latitude, 'longitude': longitude});
   }
 
-  // Clear error
+  /// Clear error.
   void clearError() {
     _error = null;
     notifyListeners();

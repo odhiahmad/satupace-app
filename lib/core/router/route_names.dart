@@ -17,12 +17,14 @@ class RouteNames {
   static const String directMatch = '/direct-match';
   static const String chat = '/chat';
   static const String chatThread = '/chat-thread';
+  static const String directChat = '/direct-chat';
   static const String groupRun = '/group-run';
   static const String groupChat = '/group-chat';
   static const String groupDetail = '/group-detail';
   static const String groupForm = '/group-form';
   static const String runActivity = '/run-activity';
   static const String strava = '/strava';
+  static const String notifications = '/notification';
 
   // Splash screen
   static const String splash = '/';

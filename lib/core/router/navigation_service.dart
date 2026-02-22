@@ -166,4 +166,19 @@ class NavigationService {
   Future<dynamic> navigateToStrava() {
     return navigateTo(RouteNames.strava);
   }
+
+  Future<dynamic> navigateToNotification() {
+    return navigateTo(RouteNames.notifications);
+  }
+
+  /// Navigate to Direct Chat page
+  Future<dynamic> navigateToDirectChat({
+    required String matchId,
+    required String partnerName,
+  }) {
+    return navigateTo(
+      RouteNames.directChat,
+      arguments: {'matchId': matchId, 'partnerName': partnerName},
+    );
+  }
 }

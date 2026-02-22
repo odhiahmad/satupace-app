@@ -8,12 +8,14 @@ class DirectMatchApi {
 
   /// Get match candidates for the current user.
   /// GET /match/candidates (JWT required)
+  /// Backend returns CandidateResult: { Profile: {...}, User: {...}, Compatibility, DistanceKm }
   Future<List<Map<String, dynamic>>> getCandidates({String? token}) async {
     try {
       final res = await api.get('/match/candidates', token: token);
       if (res is List) {
         return res
-            .map((item) => _normalizeMatch(item is Map ? Map<String, dynamic>.from(item) : const {}))
+            .map((item) => _normalizeCandidate(
+                item is Map ? Map<String, dynamic>.from(item) : const {}))
             .toList();
       }
     } catch (_) {
@@ -90,6 +92,29 @@ class DirectMatchApi {
       'status': (input['status'] ?? 'pending').toString(),
       'created_at': input['created_at']?.toString(),
       'matched_at': input['matched_at']?.toString(),
+    };
+  }
+
+  /// Normalizes a CandidateResult from the backend:
+  /// { Profile: RunnerProfile, User: User, Compatibility: float, DistanceKm: float }
+  Map<String, dynamic> _normalizeCandidate(Map<String, dynamic> input) {
+    final profile = input['Profile'] is Map
+        ? Map<String, dynamic>.from(input['Profile'] as Map)
+        : <String, dynamic>{};
+    final user = input['User'] is Map
+        ? Map<String, dynamic>.from(input['User'] as Map)
+        : <String, dynamic>{};
+    return {
+      'user_id': (user['id'] ?? '').toString(),
+      'name': (user['name'] ?? user['full_name'] ?? 'Runner').toString(),
+      'avg_pace': profile['avg_pace'],
+      'preferred_distance': profile['preferred_distance'],
+      'preferred_time': profile['preferred_time'],
+      'gender': user['gender'],
+      'image': profile['image'],
+      'compatibility': input['Compatibility'],
+      'distance_km': input['DistanceKm'],
+      'is_verified': user['is_verified'] ?? false,
     };
   }
 

@@ -3,6 +3,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../core/router/navigation_service.dart';
 import '../../core/router/route_names.dart';
+import '../../shared/components/profile_header_card.dart';
+import '../../shared/components/neon_stat_card.dart';
+import '../../shared/components/profile_info_tile.dart';
+import '../../shared/components/verification_badge.dart';
 import './profile_provider.dart';
 
 class ProfileViewPage extends StatefulWidget {
@@ -17,6 +21,7 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Always fetch fresh data when the profile tab is opened
       Provider.of<ProfileProvider>(context, listen: false).fetchProfile();
     });
   }
@@ -24,8 +29,6 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
   @override
   Widget build(BuildContext context) {
     final navService = Provider.of<NavigationService>(context, listen: false);
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -44,172 +47,35 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
       ),
       body: Consumer<ProfileProvider>(
         builder: (context, provider, _) {
-          if (provider.loading) {
+          if (provider.loading && provider.profile == null) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (provider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const FaIcon(FontAwesomeIcons.circleExclamation,
-                      size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text('Error: ${provider.error}',
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => provider.fetchProfile(),
-                    icon: const FaIcon(FontAwesomeIcons.arrowsRotate, size: 16),
-                    label: const Text('Coba Lagi'),
-                  ),
-                ],
-              ),
+          if (provider.error != null && provider.profile == null) {
+            return _ErrorView(
+              error: provider.error!,
+              onRetry: provider.fetchProfile,
             );
           }
 
           return RefreshIndicator(
-            onRefresh: () => provider.fetchProfile(),
+            onRefresh: provider.refreshProfile,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 children: [
-                  // --- Header Section ---
-                  _buildHeader(context, provider, isDark),
+                  ProfileHeaderCard(
+                    name: provider.name,
+                    email: provider.email,
+                    imageUrl: provider.image,
+                  ),
                   const SizedBox(height: 24),
-
-                  // --- Stats Cards ---
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        _buildStatCard(
-                          context,
-                          icon: FontAwesomeIcons.gaugeHigh,
-                          label: 'Avg Pace',
-                          value: provider.avgPace != null
-                              ? '${provider.avgPace!.toStringAsFixed(1)} min/km'
-                              : '-',
-                        ),
-                        const SizedBox(width: 12),
-                        _buildStatCard(
-                          context,
-                          icon: FontAwesomeIcons.route,
-                          label: 'Jarak Preferensi',
-                          value: provider.preferredDistance != null
-                              ? '${provider.preferredDistance} km'
-                              : '-',
-                        ),
-                      ],
-                    ),
-                  ),
+                  _StatsRow(provider: provider),
                   const SizedBox(height: 16),
-
-                  // --- Detail Info ---
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Informasi Profil',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold)),
-                            const Divider(height: 24),
-                            _buildInfoRow(
-                              context,
-                              icon: FontAwesomeIcons.envelope,
-                              label: 'Email',
-                              value: provider.email ?? '-',
-                            ),
-                            _buildInfoRow(
-                              context,
-                              icon: FontAwesomeIcons.phone,
-                              label: 'Telepon',
-                              value: provider.phoneNumber ?? '-',
-                            ),
-                            _buildInfoRow(
-                              context,
-                              icon: FontAwesomeIcons.venusMars,
-                              label: 'Gender',
-                              value: _formatGender(provider.gender),
-                            ),
-                            _buildInfoRow(
-                              context,
-                              icon: FontAwesomeIcons.clock,
-                              label: 'Waktu Preferensi',
-                              value: _formatPreferredTime(provider.preferredTime),
-                            ),
-                            _buildInfoRow(
-                              context,
-                              icon: FontAwesomeIcons.locationDot,
-                              label: 'Lokasi',
-                              value: provider.latitude != null &&
-                                      provider.longitude != null
-                                  ? '${provider.latitude!.toStringAsFixed(4)}, ${provider.longitude!.toStringAsFixed(4)}'
-                                  : 'Belum diatur',
-                            ),
-                            _buildInfoRow(
-                              context,
-                              icon: FontAwesomeIcons.personDress,
-                              label: 'Mode Wanita Saja',
-                              value: provider.womenOnlyMode ? 'Ya' : 'Tidak',
-                              isLast: true,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // --- Verification Badge ---
+                  _InfoCard(provider: provider),
                   Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: provider.isVerified
-                            ? const Color(0xFFB8FF00).withValues(alpha: 0.1)
-                            : Colors.orange.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: provider.isVerified
-                              ? const Color(0xFFB8FF00).withValues(alpha: 0.3)
-                              : Colors.orange.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          FaIcon(
-                            provider.isVerified
-                                ? FontAwesomeIcons.circleCheck
-                                : FontAwesomeIcons.triangleExclamation,
-                            color: provider.isVerified
-                                ? const Color(0xFFB8FF00)
-                                : Colors.orange,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            provider.isVerified
-                                ? 'Akun Terverifikasi'
-                                : 'Akun Belum Terverifikasi',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: provider.isVerified
-                                  ? const Color(0xFFB8FF00)
-                                  : Colors.orange,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    child: VerificationBadge(isVerified: provider.isVerified),
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -220,181 +86,149 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
       ),
     );
   }
+}
 
-  // --- Header with Avatar ---
-  Widget _buildHeader(
-      BuildContext context, ProfileProvider provider, bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF2D5A3D).withValues(alpha: 0.7),
-            const Color(0xFF1a3a26).withValues(alpha: 0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+// ---------------------------------------------------------------------------
+// Sub-widgets
+// ---------------------------------------------------------------------------
+
+class _ErrorView extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+
+  const _ErrorView({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Avatar
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFFB8FF00).withValues(alpha: 0.85),
-                  const Color(0xFF7FBF00).withValues(alpha: 0.75),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFB8FF00).withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: provider.image != null && provider.image!.isNotEmpty
-                ? ClipOval(
-                    child: Image.network(
-                      provider.image!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const Center(
-                        child: FaIcon(FontAwesomeIcons.personRunning,
-                            color: Colors.black87, size: 44),
-                      ),
-                    ),
-                  )
-                : const Center(
-                    child: FaIcon(FontAwesomeIcons.personRunning,
-                        color: Colors.black87, size: 44),
-                  ),
-          ),
+          const FaIcon(FontAwesomeIcons.circleExclamation,
+              size: 48, color: Colors.red),
           const SizedBox(height: 16),
-          Text(
-            provider.name ?? 'Runner',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            provider.email ?? '',
-            style: TextStyle(fontSize: 14, color: Colors.grey[300]),
-            textAlign: TextAlign.center,
+          Text('Error: $error', textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: onRetry,
+            icon: const FaIcon(FontAwesomeIcons.arrowsRotate, size: 16),
+            label: const Text('Coba Lagi'),
           ),
         ],
       ),
     );
   }
+}
 
-  // --- Stat Card ---
-  Widget _buildStatCard(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFB8FF00).withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFB8FF00).withValues(alpha: 0.2),
+class _StatsRow extends StatelessWidget {
+  final ProfileProvider provider;
+
+  const _StatsRow({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          NeonStatCard(
+            icon: FontAwesomeIcons.gaugeHigh,
+            label: 'Avg Pace',
+            value: provider.avgPace != null
+                ? '${provider.avgPace!.toStringAsFixed(1)} min/km'
+                : '-',
           ),
-        ),
-        child: Column(
-          children: [
-            FaIcon(icon, color: const Color(0xFFB8FF00), size: 24),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-              textAlign: TextAlign.center,
-            ),
-          ],
+          const SizedBox(width: 12),
+          NeonStatCard(
+            icon: FontAwesomeIcons.route,
+            label: 'Jarak Preferensi',
+            value: provider.preferredDistance != null
+                ? '${provider.preferredDistance} km'
+                : '-',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  final ProfileProvider provider;
+
+  const _InfoCard({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Informasi Profil',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const Divider(height: 24),
+              ProfileInfoTile(
+                icon: FontAwesomeIcons.envelope,
+                label: 'Email',
+                value: provider.email ?? '-',
+              ),
+              ProfileInfoTile(
+                icon: FontAwesomeIcons.phone,
+                label: 'Telepon',
+                value: provider.phoneNumber ?? '-',
+              ),
+              ProfileInfoTile(
+                icon: FontAwesomeIcons.venusMars,
+                label: 'Gender',
+                value: _formatGender(provider.gender),
+              ),
+              ProfileInfoTile(
+                icon: FontAwesomeIcons.clock,
+                label: 'Waktu Preferensi',
+                value: _formatPreferredTime(provider.preferredTime),
+              ),
+              ProfileInfoTile(
+                icon: FontAwesomeIcons.locationDot,
+                label: 'Lokasi',
+                value: provider.latitude != null && provider.longitude != null
+                    ? '${provider.latitude!.toStringAsFixed(4)}, ${provider.longitude!.toStringAsFixed(4)}'
+                    : 'Belum diatur',
+              ),
+              ProfileInfoTile(
+                icon: FontAwesomeIcons.personDress,
+                label: 'Mode Wanita Saja',
+                value: provider.womenOnlyMode ? 'Ya' : 'Tidak',
+                isLast: true,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // --- Info Row ---
-  Widget _buildInfoRow(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-    bool isLast = false,
-  }) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 32,
-                child: FaIcon(icon, size: 16, color: const Color(0xFFB8FF00)),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(label,
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey[500])),
-                    const SizedBox(height: 2),
-                    Text(value,
-                        style: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (!isLast) Divider(height: 1, color: Colors.grey[800]),
-      ],
-    );
-  }
-
   String _formatGender(String? gender) {
-    if (gender == null || gender.isEmpty) return '-';
-    switch (gender.toLowerCase()) {
+    switch (gender?.toLowerCase()) {
       case 'male':
         return 'Laki-laki';
       case 'female':
         return 'Perempuan';
       default:
-        return gender;
+        return gender?.isNotEmpty == true ? gender! : '-';
     }
   }
 
   String _formatPreferredTime(String? time) {
-    if (time == null || time.isEmpty) return '-';
-    switch (time.toLowerCase()) {
+    switch (time?.toLowerCase()) {
       case 'morning':
         return 'Pagi';
       case 'afternoon':
@@ -404,7 +238,7 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
       case 'night':
         return 'Malam';
       default:
-        return time;
+        return time?.isNotEmpty == true ? time! : '-';
     }
   }
 }

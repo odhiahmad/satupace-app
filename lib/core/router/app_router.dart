@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:run_sync/features/notification/notification_page.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/register_page.dart';
 import '../../features/auth/otp_page.dart';
@@ -6,8 +7,8 @@ import '../../features/home/home_page.dart';
 import '../../features/profile/profile_view_page.dart';
 import '../../features/profile/profile_edit_page.dart';
 import '../../features/profile/profile_setup_page.dart';
-import '../../features/chat/chat_page.dart';
 import '../../features/direct_match/direct_match_page.dart';
+import '../../features/direct_match/direct_chat_page.dart';
 import '../../features/group_run/group_run_page.dart';
 import '../../features/group_run/group_detail_page.dart';
 import '../../features/group_run/group_chat_page.dart';
@@ -89,20 +90,17 @@ class AppRouter {
           child: const DirectMatchPage(),
         );
 
-      case RouteNames.chat:
-        return _buildRoute(
-          settings: settings,
-          child: const ChatPage(),
-        );
-
-      case RouteNames.chatThread:
-        final chatId = settings.arguments as String?;
-        if (chatId == null) {
-          return _errorRoute('Chat ID is required');
+      case RouteNames.directChat:
+        final args = settings.arguments;
+        if (args is! Map) {
+          return _errorRoute('Direct chat arguments are required');
         }
         return _buildRoute(
           settings: settings,
-          child: ChatThreadPage(chatId: chatId),
+          child: DirectChatPage(
+            matchId: (args['matchId'] ?? '').toString(),
+            partnerName: (args['partnerName'] ?? 'Runner').toString(),
+          ),
         );
 
       case RouteNames.groupRun:
@@ -160,6 +158,12 @@ class AppRouter {
         return _buildRoute(
           settings: settings,
           child: const StravaPage(),
+        );
+
+        case RouteNames.notifications:
+        return _buildRoute(
+          settings: settings,
+          child: const NotificationPage(),
         );
 
       default:
