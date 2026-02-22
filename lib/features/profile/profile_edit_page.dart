@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/services/location_service.dart';
@@ -18,6 +20,7 @@ class ProfileEditPage extends StatefulWidget {
 }
 
 class _ProfileEditPageState extends State<ProfileEditPage> {
+  File? _pickedImage;
   String? _locationText;
   double? _capturedLatitude;
   double? _capturedLongitude;
@@ -170,6 +173,27 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     }
   }
 
+  Future<void> _pickImage(ProfileProvider provider) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
+    final file = File(picked.path);
+    setState(() => _pickedImage = file);
+
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await provider.uploadProfileImage(file);
+    if (!mounted) return;
+    messenger.showSnackBar(SnackBar(
+      content: Text(ok ? 'Foto profil berhasil diperbarui' : (provider.error ?? 'Gagal upload foto')),
+      backgroundColor: ok ? const Color(0xFF2D5A3D) : Colors.red,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final navService = Provider.of<NavigationService>(context, listen: false);
@@ -201,6 +225,8 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildAvatarSection(provider),
+                  const SizedBox(height: 24),
                   _buildPersonalSection(context, provider),
                   const SizedBox(height: 24),
                   _buildRunDataSection(context, provider),
@@ -218,6 +244,57 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildAvatarSection(ProfileProvider provider) {
+    final existingUrl = provider.image;
+    final hasLocal = _pickedImage != null;
+
+    return Center(
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: 52,
+            backgroundColor: AppTheme.neonLime.withValues(alpha: 0.2),
+            backgroundImage: hasLocal
+                ? FileImage(_pickedImage!) as ImageProvider
+                : (existingUrl != null && existingUrl.isNotEmpty
+                    ? NetworkImage(existingUrl)
+                    : null),
+            child: (!hasLocal && (existingUrl == null || existingUrl.isEmpty))
+                ? const FaIcon(FontAwesomeIcons.user,
+                    size: 40, color: AppTheme.neonLime)
+                : null,
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: provider.saving ? null : () => _pickImage(provider),
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.neonLime,
+                  border: Border.all(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      width: 2),
+                ),
+                child: provider.saving
+                    ? const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.black87),
+                      )
+                    : const Icon(Icons.camera_alt,
+                        size: 18, color: Colors.black87),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

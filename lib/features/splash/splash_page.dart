@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/router/navigation_service.dart';
@@ -120,36 +119,24 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // App Icon
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: const Center(
-                    child: FaIcon(
-                      FontAwesomeIcons.personRunning,
-                      size: 48,
-                      color: Colors.white,
-                    ),
-                  ),
+                Image.asset(
+                  'assets/images/satupace-icon.png',
+                  width: 110,
+                  height: 110,
                 ),
-                const SizedBox(height: 24),
-                // App Name
-                Text(
-                  'RunSync',
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                  ),
+                const SizedBox(height: 28),
+                // Logo text (horizontal)
+                Image.asset(
+                  'assets/images/satupace-logo-panjang.png',
+                  height: 48,
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   'Find Your Running Buddy',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: Colors.white.withValues(alpha: 0.85),
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 48),

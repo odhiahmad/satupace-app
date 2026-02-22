@@ -4,12 +4,14 @@ import 'biometric_service.dart';
 import '../services/secure_storage_service.dart';
 import '../services/notification_service.dart';
 import '../api/profile_api.dart';
+import '../api/notification_api.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthServiceBase _authService;
   final BiometricService _biometric;
   final SecureStorageService? _storage;
   final NotificationService? _notificationService;
+  final NotificationApi? _notificationApi;
   final ProfileApi? _profileApi;
 
   AuthProvider(
@@ -17,11 +19,13 @@ class AuthProvider with ChangeNotifier {
     this._storage, {
     BiometricService? biometric,
     NotificationService? notificationService,
+    NotificationApi? notificationApi,
     ProfileApi? profileApi,
     String? initialToken,
     String? initialName,
   })  : _biometric = biometric ?? BiometricService(),
         _notificationService = notificationService,
+        _notificationApi = notificationApi,
         _profileApi = profileApi {
     if (initialToken != null && initialToken.isNotEmpty) {
       _token = initialToken;
@@ -405,12 +409,21 @@ class AuthProvider with ChangeNotifier {
       try {
         final profileData = await _profileApi.getMyProfile(token: _token!);
         await _storage.writeProfileData(profileData);
-        
+
         // Update name from profile if available
         final profileName = profileData['name']?.toString();
         if (profileName != null && profileName.isNotEmpty) {
           _name = profileName;
           await _storage.writeUserName(profileName);
+        }
+
+        // Auto-mark profile setup done if backend shows profile is complete
+        final pace = (profileData['avg_pace'] as num?)?.toDouble() ?? 0;
+        final distance = (profileData['preferred_distance'] as num?)?.toInt() ?? 0;
+        final hasProfile = profileData['has_profile'] == true;
+        if (hasProfile || (pace > 0 && distance > 0)) {
+          _needsProfileSetup = false;
+          await _storage.setProfileSetupDone(true);
         }
       } catch (_) {
         // Non-critical; don't block auth flow
@@ -421,14 +434,11 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Register FCM token with backend.
+  /// Register FCM token with backend after login.
   Future<void> _registerFcmToken() async {
-    if (_token == null || _notificationService == null) return;
+    if (_token == null || _notificationService == null || _notificationApi == null) return;
     try {
-      final fcmToken = await _notificationService.getToken();
-      if (fcmToken != null && fcmToken.isNotEmpty) {
-        await _authService.registerFcmToken(_token!, fcmToken);
-      }
+      await _notificationService.registerDeviceToken(_notificationApi, _token!);
     } catch (_) {
       // Non-critical; don't block auth flow
     }
@@ -440,6 +450,10 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      // Remove FCM token from backend before clearing session
+      if (_token != null && _notificationService != null && _notificationApi != null) {
+        await _notificationService.removeDeviceToken(_notificationApi, _token!);
+      }
       if (_token != null) {
         await _authService.logout(_token!);
       }

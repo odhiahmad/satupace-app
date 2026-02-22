@@ -100,6 +100,7 @@ class MyApp extends StatelessWidget {
             storage,
             biometric: biometricService,
             notificationService: notificationService,
+            notificationApi: appServices.notificationApi,
             profileApi: appServices.profileApi,
           ),
         ),
@@ -126,6 +127,7 @@ class MyApp extends StatelessWidget {
           create: (_) => ProfileProvider(
             api: appServices.profileApi,
             storage: appServices.secureStorageService,
+            mediaApi: appServices.mediaApi,
           ),
         ),
         ChangeNotifierProvider(

@@ -84,7 +84,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final navService = Provider.of<NavigationService>(context, listen: false);
 
     return Scaffold(
@@ -114,47 +113,20 @@ class _RegisterPageState extends State<RegisterPage> {
                   // Logo and branding
                   Column(
                     children: [
-                      Container(
-                        height: 100,
-                        width: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [
-                              AppTheme.neonLime,
-                              AppTheme.neonLimeDark,
-                            ],
-                          ),
-                        ),
-                        child: Icon(
-                          FontAwesomeIcons.personRunning,
-                          size: 50,
-                          color: isDark ? AppTheme.darkBg : Colors.white,
-                        ),
+                      Image.asset(
+                        'assets/images/satupace-icon.png',
+                        width: 90,
+                        height: 90,
                       ),
-                      const SizedBox(height: 20),
-                      ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [
-                            AppTheme.neonLime,
-                            AppTheme.neonLimeDark,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(bounds),
-                        child: const Text(
-                          'Join RunSync',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
+                      const SizedBox(height: 16),
+                      Image.asset(
+                        'assets/images/satupace-logo-panjang.png',
+                        height: 40,
+                        fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Start your running journey',
+                        'Mulai perjalanan larimu bersama kami',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[500],
                           fontStyle: FontStyle.italic,

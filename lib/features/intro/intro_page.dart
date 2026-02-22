@@ -63,18 +63,28 @@ class _IntroPageState extends State<IntroPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Skip button
-            Align(
-              alignment: Alignment.topRight,
-              child: TextButton(
-                onPressed: _onGetStarted,
-                child: Text(
-                  'Skip',
-                  style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    fontSize: 16,
+            // Top bar: logo + skip
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: [
+                  Image.asset(
+                    'assets/images/satupace-logo-panjang.png',
+                    height: 28,
+                    fit: BoxFit.contain,
                   ),
-                ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: _onGetStarted,
+                    child: Text(
+                      'Skip',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 

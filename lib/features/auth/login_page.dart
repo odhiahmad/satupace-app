@@ -58,7 +58,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final navService = Provider.of<NavigationService>(context, listen: false);
 
     return Scaffold(
@@ -84,47 +83,20 @@ class _LoginPageState extends State<LoginPage> {
                       // Logo and branding
                       Column(
                         children: [
-                          Container(
-                            height: 120,
-                            width: 120,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppTheme.neonLime,
-                                  AppTheme.neonLimeDark,
-                                ],
-                              ),
-                            ),
-                            child: Icon(
-                              FontAwesomeIcons.personRunning,
-                              size: 60,
-                              color: isDark ? AppTheme.darkBg : Colors.white,
-                            ),
+                          Image.asset(
+                            'assets/images/satupace-icon.png',
+                            width: 100,
+                            height: 100,
                           ),
-                          const SizedBox(height: 24),
-                          ShaderMask(
-                            shaderCallback: (bounds) => LinearGradient(
-                              colors: [
-                                AppTheme.neonLime,
-                                AppTheme.neonLimeDark,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ).createShader(bounds),
-                            child: const Text(
-                              'RunSync',
-                              style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 1.5,
-                              ),
-                            ),
+                          const SizedBox(height: 20),
+                          Image.asset(
+                            'assets/images/satupace-logo-panjang.png',
+                            height: 44,
+                            fit: BoxFit.contain,
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Connect. Run. Sync.',
+                            'Find Your Running Buddy',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.grey[500],
                               fontStyle: FontStyle.italic,

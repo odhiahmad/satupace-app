@@ -169,12 +169,17 @@ class _CandidateCardState extends State<_CandidateCard> {
   bool _sending = false;
 
   Future<void> _sendRequest() async {
-    final provider =
-        Provider.of<DirectMatchProvider>(context, listen: false);
+    final provider = Provider.of<DirectMatchProvider>(context, listen: false);
+    debugPrint('[MATCH] Data kandidat: ${widget.candidate}');
     final userId = (widget.candidate['user_id'] ?? '').toString();
-    if (userId.isEmpty) return;
+    debugPrint('[MATCH] Tombol Match diklik untuk userId: $userId');
+    if (userId.isEmpty) {
+      debugPrint('[MATCH] userId kosong, tidak mengirim request');
+      return;
+    }
     setState(() => _sending = true);
     final ok = await provider.sendMatchRequest(userId);
+    debugPrint('[MATCH] Hasil kirim request: $ok');
     if (mounted) {
       setState(() => _sending = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -328,8 +333,25 @@ class _MatchesTab extends StatelessWidget {
           );
         }
 
+        final myId = provider.myUserId ?? '';
         final pending = provider.pendingMatches;
         final accepted = provider.acceptedMatches;
+
+        // Split pending: incoming = I am user_2 (receiver), outgoing = I am user_1 (sender)
+        // If myId is unknown, treat all pending as incoming (show accept/reject so user can act)
+        final List<Map<String, dynamic>> incoming;
+        final List<Map<String, dynamic>> outgoing;
+        if (myId.isEmpty) {
+          incoming = List.of(pending);
+          outgoing = [];
+        } else {
+          incoming = pending
+              .where((m) => (m['user_2_id'] ?? '').toString() == myId)
+              .toList();
+          outgoing = pending
+              .where((m) => (m['user_1_id'] ?? '').toString() == myId)
+              .toList();
+        }
 
         if (pending.isEmpty && accepted.isEmpty) {
           return const Center(
@@ -356,46 +378,39 @@ class _MatchesTab extends StatelessWidget {
           onRefresh: provider.fetchMatches,
           child: ListView(
             children: [
-              // ── Incoming pending requests ──────────────────────────────
-              if (pending.isNotEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    children: [
-                      const FaIcon(FontAwesomeIcons.bell,
-                          size: 13, color: Colors.orange),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Permintaan Masuk (${pending.length})',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: Colors.orange),
-                      ),
-                    ],
-                  ),
+              // ── Incoming: others invited me → show Accept / Reject ─────
+              if (incoming.isNotEmpty) ...[
+                _SectionHeader(
+                  icon: FontAwesomeIcons.bell,
+                  label: 'Permintaan Masuk (${incoming.length})',
+                  color: Colors.orange,
                 ),
-                ...pending.map((m) => _PendingMatchCard(match: m)),
+                ...incoming.map(
+                  (m) => _PendingMatchCard(match: m, isSender: false),
+                ),
+                const Divider(height: 24),
+              ],
+
+              // ── Outgoing: I invited someone → waiting for their reply ──
+              if (outgoing.isNotEmpty) ...[
+                _SectionHeader(
+                  icon: FontAwesomeIcons.paperPlane,
+                  label: 'Permintaan Terkirim (${outgoing.length})',
+                  color: Colors.blueGrey,
+                ),
+                ...outgoing.map(
+                  (m) => _PendingMatchCard(match: m, isSender: true),
+                ),
                 const Divider(height: 24),
               ],
 
               // ── Accepted — tap to chat ─────────────────────────────────
               if (accepted.isNotEmpty) ...[
-                if (pending.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        const FaIcon(FontAwesomeIcons.comments,
-                            size: 13, color: AppTheme.neonLime),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Match Saya (${accepted.length})',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                      ],
-                    ),
+                if (incoming.isNotEmpty || outgoing.isNotEmpty)
+                  _SectionHeader(
+                    icon: FontAwesomeIcons.comments,
+                    label: 'Match Saya (${accepted.length})',
+                    color: AppTheme.neonLime,
                   ),
                 ...accepted.map((m) => _AcceptedMatchCard(match: m)),
               ],
@@ -409,7 +424,8 @@ class _MatchesTab extends StatelessWidget {
 
 class _PendingMatchCard extends StatefulWidget {
   final Map<String, dynamic> match;
-  const _PendingMatchCard({required this.match});
+  final bool isSender;
+  const _PendingMatchCard({required this.match, required this.isSender});
 
   @override
   State<_PendingMatchCard> createState() => _PendingMatchCardState();
@@ -442,19 +458,40 @@ class _PendingMatchCardState extends State<_PendingMatchCard> {
     if (mounted) setState(() => _busy = false);
   }
 
+  String _formatSentAt(dynamic raw) {
+    if (raw == null) return '';
+    try {
+      final dt = DateTime.parse(raw.toString()).toLocal();
+      const months = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+      final now = DateTime.now();
+      if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
+        return 'hari ini ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      }
+      return '${dt.day} ${months[dt.month]}';
+    } catch (_) {
+      return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = (widget.match['partner_name'] ?? 'Runner').toString();
+    final sentAt = _formatSentAt(widget.match['created_at']);
+    final avatarColor = widget.isSender ? Colors.blueGrey : Colors.orange;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.07),
+        color: avatarColor.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+        border: Border.all(color: avatarColor.withValues(alpha: 0.3)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Avatar
           Container(
@@ -462,37 +499,100 @@ class _PendingMatchCardState extends State<_PendingMatchCard> {
             height: 42,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.orange.withValues(alpha: 0.15),
+              color: avatarColor.withValues(alpha: 0.15),
             ),
             child: Center(
               child: Text(
                 name.isNotEmpty ? name[0].toUpperCase() : '?',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.orange),
+                    color: avatarColor),
               ),
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 2),
-                const Text('Mengajak kamu untuk match',
-                    style: TextStyle(fontSize: 11, color: Colors.grey)),
-              ],
-            ),
+            child: widget.isSender
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name,
+                          style:
+                              const TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const FaIcon(FontAwesomeIcons.paperPlane,
+                              size: 10, color: Colors.blueGrey),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Permintaan match telah terkirim',
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.blueGrey),
+                          ),
+                        ],
+                      ),
+                      if (sentAt.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Dikirim $sentAt · Menunggu konfirmasi dari $name',
+                          style: TextStyle(
+                              fontSize: 10, color: Colors.grey[500]),
+                        ),
+                      ],
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name,
+                          style:
+                              const TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$name mengajak kamu untuk match',
+                        style: const TextStyle(
+                            fontSize: 11, color: Colors.grey),
+                      ),
+                    ],
+                  ),
           ),
           if (_busy)
-            const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2))
+            const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else if (widget.isSender)
+            // Outgoing: visual "Terkirim" badge with checkmark
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    FaIcon(FontAwesomeIcons.check,
+                        size: 9, color: Colors.blueGrey),
+                    SizedBox(width: 4),
+                    Text(
+                      'Terkirim',
+                      style: TextStyle(fontSize: 10, color: Colors.blueGrey),
+                    ),
+                  ],
+                ),
+              ),
+            )
           else ...[
+            // Incoming: receiver can Accept or Reject
             OutlinedButton(
               onPressed: _reject,
               style: OutlinedButton.styleFrom(
@@ -504,8 +604,7 @@ class _PendingMatchCardState extends State<_PendingMatchCard> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
-              child:
-                  const Text('Tolak', style: TextStyle(fontSize: 12)),
+              child: const Text('Tolak', style: TextStyle(fontSize: 12)),
             ),
             const SizedBox(width: 6),
             ElevatedButton(
@@ -633,6 +732,30 @@ class _AcceptedMatchCard extends StatelessWidget {
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _SectionHeader(
+      {required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          FaIcon(icon, size: 13, color: color),
+          const SizedBox(width: 6),
+          Text(label,
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 13, color: color)),
+        ],
+      ),
+    );
+  }
+}
 
 class _Tag extends StatelessWidget {
   final IconData icon;

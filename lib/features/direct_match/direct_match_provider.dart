@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../core/api/direct_match_api.dart';
 import '../../core/services/secure_storage_service.dart';
@@ -37,6 +38,9 @@ class DirectMatchProvider with ChangeNotifier {
   String? get candidatesError => _candidatesError;
   String? get matchesError => _matchesError;
 
+  // Current user's id (available after fetchMatches / fetchCandidates)
+  String? get myUserId => _myUserId;
+
   // Backward-compat aliases
   bool get loading => _loadingMatches;
   String? get error => _matchesError;
@@ -45,8 +49,42 @@ class DirectMatchProvider with ChangeNotifier {
   // ── Internal helpers ───────────────────────────────────────────────────────
 
   Future<String?> _getMyUserId() async {
-    _myUserId ??= await _storage.readUserId();
-    return _myUserId;
+    if (_myUserId != null && _myUserId!.isNotEmpty) return _myUserId;
+
+    // 1. Try secure storage
+    final stored = await _storage.readUserId();
+    if (stored != null && stored.isNotEmpty) {
+      _myUserId = stored;
+      return _myUserId;
+    }
+
+    // 2. Fallback: decode JWT claim
+    final token = await _storage.readToken();
+    if (token != null && token.isNotEmpty) {
+      try {
+        final parts = token.split('.');
+        if (parts.length == 3) {
+          var payload = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+          switch (payload.length % 4) {
+            case 2: payload += '=='; break;
+            case 3: payload += '='; break;
+            default: break;
+          }
+          final decoded = jsonDecode(
+            utf8.decode(base64Decode(payload)),
+          ) as Map<String, dynamic>;
+          final jwtUid =
+              decoded['user_id']?.toString() ?? decoded['sub']?.toString();
+          if (jwtUid != null && jwtUid.isNotEmpty) {
+            _myUserId = jwtUid;
+            await _storage.writeUserId(jwtUid);
+            return _myUserId;
+          }
+        }
+      } catch (_) {}
+    }
+
+    return null;
   }
 
   void _enrichWithPartner(Map<String, dynamic> match, String? myId) {
@@ -94,19 +132,23 @@ class DirectMatchProvider with ChangeNotifier {
       final token = await _storage.readToken();
       if (token == null) throw Exception('Token not found');
       final myId = await _getMyUserId();
+      debugPrint('[MATCH] myUserId=$myId');
       final all = await _api.getMyMatches(token: token);
+      debugPrint('[MATCH] total matches from API: ${all.length}');
 
       final pending = <Map<String, dynamic>>[];
       final accepted = <Map<String, dynamic>>[];
 
       for (final m in all) {
         _enrichWithPartner(m, myId);
+        debugPrint('[MATCH] id=${m['id']} status=${m['status']} u1=${m['user_1_id']} u2=${m['user_2_id']} partner=${m['partner_name']}');
         if (m['status'] == 'accepted') {
           accepted.add(m);
         } else if (m['status'] == 'pending') {
           pending.add(m);
         }
       }
+      debugPrint('[MATCH] pending=${pending.length} accepted=${accepted.length}');
 
       _pendingMatches = pending;
       _acceptedMatches = accepted;

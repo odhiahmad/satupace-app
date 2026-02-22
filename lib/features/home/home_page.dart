@@ -78,16 +78,10 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: [AppTheme.neonLime, AppTheme.neonLimeDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ).createShader(bounds),
-          child: const Text(
-            'SatuPace',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-          ),
+        title: Image.asset(
+          'assets/images/satupace-logo-panjang.png',
+          height: 32,
+          fit: BoxFit.contain,
         ),
         elevation: 0,
         actions: [

@@ -85,8 +85,8 @@ class DirectMatchApi {
   Map<String, dynamic> _normalizeMatch(Map<String, dynamic> input) {
     return {
       'id': (input['id'] ?? '').toString(),
-      'user_1_id': (input['user_1_id'] ?? input['user1_id'] ?? '').toString(),
-      'user_2_id': (input['user_2_id'] ?? input['user2_id'] ?? '').toString(),
+      'user_1_id': (input['user_1_id'] ?? input['user_1_id'] ?? '').toString(),
+      'user_2_id': (input['user_2_id'] ?? input['user_2_id'] ?? '').toString(),
       'user_1': input['user_1'],
       'user_2': input['user_2'],
       'status': (input['status'] ?? 'pending').toString(),
@@ -99,13 +99,14 @@ class DirectMatchApi {
   /// { Profile: RunnerProfile, User: User, Compatibility: float, DistanceKm: float }
   Map<String, dynamic> _normalizeCandidate(Map<String, dynamic> input) {
     final profile = input['Profile'] is Map
-        ? Map<String, dynamic>.from(input['Profile'] as Map)
-        : <String, dynamic>{};
+      ? Map<String, dynamic>.from(input['Profile'] as Map)
+      : <String, dynamic>{};
     final user = input['User'] is Map
-        ? Map<String, dynamic>.from(input['User'] as Map)
-        : <String, dynamic>{};
+      ? Map<String, dynamic>.from(input['User'] as Map)
+      : <String, dynamic>{};
     return {
-      'user_id': (user['id'] ?? '').toString(),
+      // User entity has lowercase json tags: "id", "name", etc.
+      'user_id': (user['id'] ?? user['Id'] ?? '').toString(),
       'name': (user['name'] ?? user['full_name'] ?? 'Runner').toString(),
       'avg_pace': profile['avg_pace'],
       'preferred_distance': profile['preferred_distance'],

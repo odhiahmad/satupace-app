@@ -67,10 +67,10 @@ class ApiService {
     return _processWithRetry(res, 'PATCH', path, token: token, headers: headers, body: body);
   }
 
-  Future<dynamic> delete(String path, {String? token, Map<String, String>? headers}) async {
+  Future<dynamic> delete(String path, {String? token, Map<String, String>? headers, Object? body}) async {
     final h = await _headers(token, headers);
-    final res = await http.delete(_uri(path), headers: h).timeout(const Duration(seconds: 20));
-    return _processWithRetry(res, 'DELETE', path, token: token, headers: headers);
+    final res = await http.delete(_uri(path), headers: h, body: body).timeout(const Duration(seconds: 20));
+    return _processWithRetry(res, 'DELETE', path, token: token, headers: headers, body: body);
   }
 
   // ─── Auto Refresh Token on 401 ───

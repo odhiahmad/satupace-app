@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart' as auth;
 import '../../core/services/app_services.dart';
 import '../../core/services/secure_storage_service.dart';
+import '../../core/providers/chat_notification_provider.dart';
 
 class GroupChatPage extends StatefulWidget {
   final String groupId;
@@ -113,6 +114,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
       }
     }
     debugPrint('[CHAT] _myUserId=$_myUserId _myName=$_myName');
+    // Mark this group chat as read when the page opens
+    if (mounted) {
+      Provider.of<ChatNotificationProvider>(context, listen: false)
+          .markRead('group:${widget.groupId}');
+    }
     await _loadHistory();
     _connectWs();
   }
@@ -287,6 +293,14 @@ class _GroupChatPageState extends State<GroupChatPage> {
               if (mounted) {
                 setState(() => _messages.add(normalized));
                 _scrollToBottom();
+                // Notify so badge & notification page update
+                Provider.of<ChatNotificationProvider>(context, listen: false)
+                    .addNotification(
+                  chatId: 'group:${widget.groupId}',
+                  chatName: widget.groupName,
+                  senderName: normalized['sender_name']?.toString() ?? '',
+                  message: wsContent,
+                );
               }
             }
           } catch (e) {
@@ -757,7 +771,7 @@ class _TypingDotsState extends State<_TypingDots>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, __) {
+      builder: (_, _) {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: List.generate(3, (i) {

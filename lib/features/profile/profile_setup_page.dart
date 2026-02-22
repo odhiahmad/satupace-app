@@ -22,6 +22,37 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   bool _saving = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Check if the user already has a complete profile from the backend.
+    // If so, skip setup and go straight to home.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkIfAlreadySetup());
+  }
+
+  Future<void> _checkIfAlreadySetup() async {
+    if (!mounted) return;
+    final profileProvider =
+        Provider.of<ProfileProvider>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final nav = Provider.of<NavigationService>(context, listen: false);
+
+    // Fetch the latest profile from backend
+    await profileProvider.fetchProfile();
+    if (!mounted) return;
+
+    final pace = profileProvider.avgPace ?? 0;
+    final distance = profileProvider.preferredDistance ?? 0;
+    final hasProfile = profileProvider.hasProfile;
+
+    // Profile is considered complete if pace & distance are set,
+    // or if the backend explicitly says the user has a profile
+    if (hasProfile || (pace > 0 && distance > 0)) {
+      await auth.markProfileSetupDone();
+      if (mounted) nav.navigateToHomeAndClear();
+    }
+  }
+
+  @override
   void dispose() {
     _paceCtrl.dispose();
     _distanceCtrl.dispose();
@@ -100,25 +131,20 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
               Center(
                 child: Column(
                   children: [
-                    Container(
+                    Image.asset(
+                      'assets/images/satupace-icon.png',
                       width: 80,
                       height: 80,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary
-                            .withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Center(
-                        child: FaIcon(
-                          FontAwesomeIcons.personRunning,
-                          size: 36,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
                     ),
                     const SizedBox(height: 16),
+                    Image.asset(
+                      'assets/images/satupace-logo-panjang.png',
+                      height: 32,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 12),
                     Text(
-                      'Setup Runner Profile',
+                      'Setup Profil Runner',
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),

@@ -1,9 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../core/api/profile_api.dart';
+import '../../core/api/media_api.dart';
 import '../../core/services/secure_storage_service.dart';
 
 class ProfileProvider with ChangeNotifier {
   final ProfileApi _api;
+  final MediaApi? _mediaApi;
   final SecureStorageService _storage;
 
   Map<String, dynamic>? _profile;
@@ -15,7 +19,9 @@ class ProfileProvider with ChangeNotifier {
   ProfileProvider({
     required ProfileApi api,
     required SecureStorageService storage,
+    MediaApi? mediaApi,
   })  : _api = api,
+        _mediaApi = mediaApi,
         _storage = storage;
 
   // Getters
@@ -181,6 +187,48 @@ class ProfileProvider with ChangeNotifier {
   /// Update location.
   Future<bool> updateLocation(double latitude, double longitude) async {
     return updateProfile({'latitude': latitude, 'longitude': longitude});
+  }
+
+  /// Upload a profile photo and persist the URL on the profile.
+  /// [imageFile] — the File picked by image_picker.
+  Future<bool> uploadProfileImage(File imageFile) async {
+    if (_mediaApi == null) {
+      _error = 'Media API tidak tersedia';
+      notifyListeners();
+      return false;
+    }
+    _saving = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final token = await _storage.readToken();
+      if (token == null) throw Exception('Token not found');
+
+      final bytes = await imageFile.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      final result = await _mediaApi.uploadPhoto(
+        imageBase64: base64Image,
+        type: 'profile',
+        isPrimary: true,
+        token: token,
+      );
+
+      // Backend returns the uploaded photo URL in result['url'] or result['image']
+      final url = (result['url'] ?? result['image'] ?? '').toString();
+      if (url.isNotEmpty) {
+        await updateProfile({'image': url});
+      }
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _saving = false;
+      notifyListeners();
+    }
   }
 
   /// Clear error.
