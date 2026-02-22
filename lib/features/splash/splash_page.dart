@@ -118,19 +118,19 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Icon (Logo)
+                // App Icon
                 Container(
-                  width: 120,
-                  height: 120,
+                  width: 100,
+                  height: 100,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(32),
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  child: Center(
-                    child: Image.asset(
-                      'assets/images/logo-icon.png',
-                      width: 90,
-                      height: 90,
+                  child: const Center(
+                    child: FaIcon(
+                      FontAwesomeIcons.personRunning,
+                      size: 48,
+                      color: Colors.white,
                     ),
                   ),
                 ),

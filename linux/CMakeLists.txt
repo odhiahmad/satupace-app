@@ -7,7 +7,11 @@ project(runner LANGUAGES CXX)
 set(BINARY_NAME "run_sync")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
+<<<<<<< HEAD
 set(APPLICATION_ID "com.satupace.app")
+=======
+set(APPLICATION_ID "com.runsync.app")
+>>>>>>> a7f704e2373d74687fa5c54d94456d5a2c71b8a0
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

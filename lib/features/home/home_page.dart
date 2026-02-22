@@ -214,7 +214,15 @@ class _HomeViewState extends State<_HomeView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Welcome back, ${auth.name ?? 'Runner'}',
+                          'Welcome back!',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          auth.name ?? 'Runner',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
