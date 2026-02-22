@@ -3,6 +3,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../api/notification_api.dart';
+import '../router/navigation_service.dart';
+import '../router/route_names.dart';
 
 /// Background FCM handler — must be top-level.
 @pragma('vm:entry-point')
@@ -76,6 +78,26 @@ class NotificationService {
 
   void _onTap(RemoteMessage message) {
     debugPrint('[FCM] Tapped: ${message.data}');
+    _handleNavigation(message.data, message.notification?.title);
+  }
+
+  void _handleNavigation(Map<String, dynamic> data, String? title) {
+    final type = data['type']?.toString() ?? '';
+    final refId = data['ref_id']?.toString() ?? '';
+    if (refId.isEmpty) return;
+
+    final nav = NavigationService();
+    if (type == 'direct_message') {
+      nav.navigateTo(
+        RouteNames.directChat,
+        arguments: {
+          'matchId': refId,
+          'partnerName': title ?? 'Runner',
+        },
+      );
+    } else if (type == 'group_message') {
+      nav.navigateTo(RouteNames.groupDetail, arguments: refId);
+    }
   }
 
   Future<void> _show({

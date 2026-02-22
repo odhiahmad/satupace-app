@@ -386,7 +386,7 @@ class _GroupFormPageState extends State<GroupFormPage> {
                   ],
                 ),
                 value: _isWomenOnly,
-                activeColor: AppTheme.neonLime,
+                activeThumbColor: AppTheme.neonLime,
                 onChanged: (v) => setState(() => _isWomenOnly = v),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 14),

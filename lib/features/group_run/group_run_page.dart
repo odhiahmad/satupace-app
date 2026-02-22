@@ -308,7 +308,7 @@ class _GroupRunPageState extends State<GroupRunPage>
                           TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 ),
                 Consumer<GroupRunProvider>(
-                  builder: (_, provider, __) {
+                  builder: (_, provider, _) {
                     final visibleEntries = provider.filters.entries
                         .where((e) => e.key != 'latitude' && e.key != 'longitude')
                         .toList();
@@ -338,7 +338,7 @@ class _GroupRunPageState extends State<GroupRunPage>
 
             // Filter chips summary
             Consumer<GroupRunProvider>(
-              builder: (_, provider, __) {
+              builder: (_, provider, _) {
                 final visibleEntries = provider.filters.entries
                     .where((e) => e.key != 'latitude' && e.key != 'longitude')
                     .toList();

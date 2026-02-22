@@ -567,7 +567,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 SwitchListTile(
                   title: const Text('Khusus Wanita'),
                   value: isWomenOnly,
-                  activeColor: AppTheme.neonLime,
+                  activeThumbColor: AppTheme.neonLime,
                   onChanged: (v) =>
                       setModalState(() => isWomenOnly = v),
                   contentPadding: EdgeInsets.zero,
