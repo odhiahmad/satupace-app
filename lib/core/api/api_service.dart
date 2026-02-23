@@ -49,9 +49,9 @@ class ApiService {
     return _processWithRetry(res, 'GET', path, token: token, headers: headers);
   }
 
-  Future<dynamic> post(String path, {String? token, Map<String, String>? headers, Object? body}) async {
+  Future<dynamic> post(String path, {String? token, Map<String, String>? headers, Object? body, Duration timeout = const Duration(seconds: 20)}) async {
     final h = await _headers(token, headers);
-    final res = await http.post(_uri(path), headers: h, body: body).timeout(const Duration(seconds: 20));
+    final res = await http.post(_uri(path), headers: h, body: body).timeout(timeout);
     return _processWithRetry(res, 'POST', path, token: token, headers: headers, body: body);
   }
 

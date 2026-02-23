@@ -23,7 +23,6 @@ class RouteNames {
   static const String groupDetail = '/group-detail';
   static const String groupForm = '/group-form';
   static const String runActivity = '/run-activity';
-  static const String strava = '/strava';
   static const String notifications = '/notification';
 
   // Splash screen

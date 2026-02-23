@@ -103,7 +103,14 @@ class ProfileProvider with ChangeNotifier {
       final token = await _storage.readToken();
       if (token == null) throw Exception('Token not found');
 
+      final oldImage = _profile?['image']?.toString();
       _profile = await _api.getMyProfile(token: token);
+
+      // Preserve image URL if backend didn't return it in this response
+      if ((_profile?['image'] == null || _profile!['image'].toString().isEmpty) &&
+          oldImage != null && oldImage.isNotEmpty) {
+        _profile!['image'] = oldImage;
+      }
       _loadedFromApi = true;
       await _storage.writeProfileData(_profile!);
       final nameVal = _profile?['name']?.toString();
@@ -129,7 +136,14 @@ class ProfileProvider with ChangeNotifier {
       final token = await _storage.readToken();
       if (token == null) throw Exception('Token not found');
 
+      final oldImage = _profile?['image']?.toString();
       _profile = await _api.getMyProfile(token: token);
+
+      // Preserve image URL if backend didn't return it in this response
+      if ((_profile?['image'] == null || _profile!['image'].toString().isEmpty) &&
+          oldImage != null && oldImage.isNotEmpty) {
+        _profile!['image'] = oldImage;
+      }
       _loadedFromApi = true;
       await _storage.writeProfileData(_profile!);
       final nameVal = _profile?['name']?.toString();

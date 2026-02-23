@@ -7,6 +7,7 @@ class ProfileHeaderCard extends StatelessWidget {
   final String? email;
   final String? imageUrl;
   final double avatarSize;
+  final VoidCallback? onAvatarTap;
 
   const ProfileHeaderCard({
     super.key,
@@ -14,6 +15,7 @@ class ProfileHeaderCard extends StatelessWidget {
     this.email,
     this.imageUrl,
     this.avatarSize = 100,
+    this.onAvatarTap,
   });
 
   @override
@@ -33,7 +35,11 @@ class ProfileHeaderCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _Avatar(imageUrl: imageUrl, size: avatarSize),
+          _AvatarWithEdit(
+            imageUrl: imageUrl,
+            size: avatarSize,
+            onTap: onAvatarTap,
+          ),
           const SizedBox(height: 16),
           Text(
             name ?? 'Runner',
@@ -59,15 +65,16 @@ class ProfileHeaderCard extends StatelessWidget {
   }
 }
 
-class _Avatar extends StatelessWidget {
+class _AvatarWithEdit extends StatelessWidget {
   final String? imageUrl;
   final double size;
+  final VoidCallback? onTap;
 
-  const _Avatar({this.imageUrl, required this.size});
+  const _AvatarWithEdit({this.imageUrl, required this.size, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final avatar = Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
@@ -92,11 +99,40 @@ class _Avatar extends StatelessWidget {
           ? ClipOval(
               child: Image.network(
                 imageUrl!,
+                key: ValueKey(imageUrl),
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const _DefaultIcon(),
+                errorBuilder: (_, e, s) => const _DefaultIcon(),
               ),
             )
           : const _DefaultIcon(),
+    );
+
+    if (onTap == null) return avatar;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        GestureDetector(onTap: onTap, child: avatar),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                color: Color(0xFFB8FF00),
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: FaIcon(FontAwesomeIcons.camera,
+                    size: 14, color: Colors.black87),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -107,7 +143,8 @@ class _DefaultIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: FaIcon(FontAwesomeIcons.personRunning, color: Colors.black87, size: 44),
+      child: FaIcon(FontAwesomeIcons.personRunning,
+          color: Colors.black87, size: 44),
     );
   }
 }

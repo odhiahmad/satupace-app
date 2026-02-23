@@ -84,19 +84,80 @@ class NotificationService {
   void _handleNavigation(Map<String, dynamic> data, String? title) {
     final type = data['type']?.toString() ?? '';
     final refId = data['ref_id']?.toString() ?? '';
-    if (refId.isEmpty) return;
 
     final nav = NavigationService();
-    if (type == 'direct_message') {
-      nav.navigateTo(
-        RouteNames.directChat,
-        arguments: {
-          'matchId': refId,
-          'partnerName': title ?? 'Runner',
-        },
-      );
-    } else if (type == 'group_message') {
-      nav.navigateTo(RouteNames.groupDetail, arguments: refId);
+    switch (type) {
+      case 'direct_message':
+        if (refId.isNotEmpty) {
+          nav.navigateTo(RouteNames.directChat, arguments: {
+            'matchId': refId,
+            'partnerName': title ?? 'Runner',
+          });
+        }
+        break;
+
+      case 'group_message':
+        if (refId.isNotEmpty) {
+          nav.navigateTo(RouteNames.groupChat, arguments: {
+            'groupId': refId,
+            'groupName': title ?? 'Grup',
+            'myRole': '',
+          });
+        }
+        break;
+
+      case 'match_accepted':
+        if (refId.isNotEmpty) {
+          nav.navigateTo(RouteNames.directChat, arguments: {
+            'matchId': refId,
+            'partnerName': title ?? 'Runner',
+          });
+        }
+        break;
+
+      case 'match_request':
+      case 'match_rejected':
+        nav.navigateTo(RouteNames.directMatch);
+        break;
+
+      case 'group_invite':
+      case 'group_join_approved':
+      case 'group_join_request':
+      case 'group_role_changed':
+      case 'group_member_left':
+      case 'group_full':
+      case 'group_completed':
+      case 'group_schedule_start':
+        if (refId.isNotEmpty) {
+          nav.navigateTo(RouteNames.groupDetail,
+              arguments: {'groupId': refId, 'myRole': ''});
+        } else {
+          nav.navigateTo(RouteNames.groupRun);
+        }
+        break;
+
+      case 'group_join_rejected':
+      case 'group_member_kicked':
+      case 'group_cancelled':
+        nav.navigateTo(RouteNames.groupRun);
+        break;
+
+      case 'activity_logged':
+        nav.navigateTo(RouteNames.runActivity);
+        break;
+
+      case 'profile_incomplete':
+      case 'account_verified':
+      case 'password_changed':
+      case 'email_change_request':
+      case 'user_reported':
+      case 'user_blocked':
+      case 'auto_suspended':
+        nav.navigateTo(RouteNames.profile);
+        break;
+
+      default:
+        break;
     }
   }
 

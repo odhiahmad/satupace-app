@@ -162,11 +162,6 @@ class NavigationService {
     return navigateTo(RouteNames.runActivity);
   }
 
-  /// Navigate to Smartwatch Sync
-  Future<dynamic> navigateToStrava() {
-    return navigateTo(RouteNames.strava);
-  }
-
   Future<dynamic> navigateToNotification() {
     return navigateTo(RouteNames.notifications);
   }

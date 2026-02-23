@@ -17,7 +17,6 @@ import '../../features/splash/splash_page.dart';
 import '../../features/intro/intro_page.dart';
 import '../../features/auth/enable_biometric_page.dart';
 import '../../features/run_activity/run_activity_page.dart';
-import '../../features/strava/strava_page.dart';
 import 'route_names.dart';
 
 /// Route generator untuk menangani navigation
@@ -154,13 +153,7 @@ class AppRouter {
           child: const RunActivityPage(),
         );
 
-      case RouteNames.strava:
-        return _buildRoute(
-          settings: settings,
-          child: const StravaPage(),
-        );
-
-        case RouteNames.notifications:
+      case RouteNames.notifications:
         return _buildRoute(
           settings: settings,
           child: const NotificationPage(),

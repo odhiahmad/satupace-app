@@ -7,14 +7,14 @@ import '../../core/theme/app_theme.dart';
 import '../../core/router/navigation_service.dart';
 import '../../core/services/app_services.dart';
 import '../../core/services/secure_storage_service.dart';
-import '../../shared/components/neon_stat_card.dart';
 import '../../shared/components/neon_action_button.dart';
+import '../../shared/components/neon_stat_card.dart';
 import '../../shared/components/runner_list_card.dart';
 import '../direct_match/direct_match_page.dart';
 import '../group_run/group_run_page.dart';
-import '../strava/strava_provider.dart';
 import '../profile/profile_provider.dart';
 import '../profile/profile_view_page.dart';
+import '../run_activity/run_activity_provider.dart';
 import '../../core/providers/chat_notification_provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -158,16 +158,18 @@ class _HomeViewState extends State<_HomeView> {
   }
 
   Future<void> _loadData() async {
-    final strava = Provider.of<StravaProvider>(context, listen: false);
-    if (strava.stats == null && strava.isConnected) {
-      strava.fetchStats();
-    } else if (!strava.isConnected) {
-      strava.loadAll();
-    }
-
     final profile = Provider.of<ProfileProvider>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final activityProvider =
+        Provider.of<RunActivityProvider>(context, listen: false);
+
     if (profile.profile == null) {
       await profile.fetchProfile();
+    }
+
+    final userId = auth.userId;
+    if (userId != null) {
+      activityProvider.loadActivities(userId);
     }
 
     await _loadNearbyRunners();
@@ -212,6 +214,7 @@ class _HomeViewState extends State<_HomeView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(context, auth, navService),
+          _buildWeeklyStats(context),
           _buildQuickActions(context, navService),
           _buildNearbyRunnersSection(context),
           const SizedBox(height: 24),
@@ -287,32 +290,6 @@ class _HomeViewState extends State<_HomeView> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Consumer<StravaProvider>(
-            builder: (context, strava, _) => Row(
-              children: [
-                NeonStatCard(
-                  label: 'Runs',
-                  value: '${strava.totalRuns}',
-                  icon: FontAwesomeIcons.personRunning,
-                ),
-                const SizedBox(width: 12),
-                NeonStatCard(
-                  label: 'Distance',
-                  value: '${strava.totalDistanceKm.toStringAsFixed(1)}km',
-                  icon: FontAwesomeIcons.mapLocationDot,
-                ),
-                const SizedBox(width: 12),
-                NeonStatCard(
-                  label: 'Avg Pace',
-                  value: strava.avgPace != null
-                      ? strava.avgPace!.toStringAsFixed(1)
-                      : '-',
-                  icon: FontAwesomeIcons.gaugeHigh,
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -337,14 +314,6 @@ class _HomeViewState extends State<_HomeView> {
             children: [
               Expanded(
                 child: NeonActionButton(
-                  icon: FontAwesomeIcons.circlePlay,
-                  label: 'Start Run',
-                  onPressed: navService.navigateToRunActivity,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: NeonActionButton(
                   icon: FontAwesomeIcons.userPlus,
                   label: 'Find Runners',
                   onPressed: () => widget.onNavigate?.call(1),
@@ -357,14 +326,6 @@ class _HomeViewState extends State<_HomeView> {
             children: [
               Expanded(
                 child: NeonActionButton(
-                  icon: FontAwesomeIcons.strava,
-                  label: 'Strava Sync',
-                  onPressed: navService.navigateToStrava,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: NeonActionButton(
                   icon: FontAwesomeIcons.peopleGroup,
                   label: 'My Groups',
                   onPressed: () => widget.onNavigate?.call(2),
@@ -374,6 +335,61 @@ class _HomeViewState extends State<_HomeView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWeeklyStats(BuildContext context) {
+    return Consumer<RunActivityProvider>(
+      builder: (_, provider, _) {
+        if (provider.weeklyRuns == 0 && !provider.loading) {
+          return const SizedBox.shrink();
+        }
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Minggu Ini',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: NeonStatCard(
+                      icon: FontAwesomeIcons.route,
+                      label: 'Jarak',
+                      value: '${provider.weeklyDistanceKm} km',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: NeonStatCard(
+                      icon: FontAwesomeIcons.personRunning,
+                      label: 'Lari',
+                      value: '${provider.weeklyRuns}x',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: NeonStatCard(
+                      icon: FontAwesomeIcons.gaugeHigh,
+                      label: 'Avg Pace',
+                      value: provider.weeklyAvgPace > 0
+                          ? '${provider.weeklyAvgPace} /km'
+                          : '-',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

@@ -9,7 +9,6 @@ import '../../core/router/navigation_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/components/location_capture_card.dart';
 import '../../shared/components/choice_chip_selector.dart';
-import '../strava/strava_provider.dart';
 import './profile_provider.dart';
 
 class ProfileEditPage extends StatefulWidget {
@@ -56,8 +55,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       if (!mounted) return;
       _populateControllers(provider);
 
-      final strava = Provider.of<StravaProvider>(context, listen: false);
-      if (!strava.isConnected) strava.loadAll();
     });
   }
 
@@ -349,32 +346,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const Spacer(),
-            Consumer<StravaProvider>(
-              builder: (context, strava, _) {
-                final pace = strava.avgPace;
-                if (pace == null) return const SizedBox.shrink();
-                return TextButton.icon(
-                  onPressed: () {
-                    setState(() => _paceCtrl.text = pace.toStringAsFixed(2));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            'Pace diisi otomatis: ${pace.toStringAsFixed(2)} min/km'),
-                        backgroundColor: const Color(0xFF2D5A3D),
-                      ),
-                    );
-                  },
-                  icon: const FaIcon(FontAwesomeIcons.strava, size: 14),
-                  label: const Text('Dari Strava',
-                      style: TextStyle(fontSize: 12)),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppTheme.neonLime,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  ),
-                );
-              },
-            ),
           ],
         ),
         const SizedBox(height: 12),

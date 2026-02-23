@@ -67,7 +67,7 @@ class ProfileApi {
       'latitude': (body['latitude'] as num?)?.toDouble() ?? 0,
       'longitude': (body['longitude'] as num?)?.toDouble() ?? 0,
       'women_only_mode': body['women_only_mode'] == true,
-      'image': body['image']?.toString(),
+      'image': (body['image'] ?? user['image'])?.toString(),
       'is_active': body['is_active'] == true,
       'created_at': body['created_at']?.toString(),
       'updated_at': body['updated_at']?.toString(),

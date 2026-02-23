@@ -9,11 +9,11 @@ import '../api/run_activity_api.dart';
 import '../api/safety_api.dart';
 import '../api/explore_api.dart';
 import '../api/media_api.dart';
-import '../api/strava_api.dart';
 import '../api/notification_api.dart';
 import '../services/secure_storage_service.dart';
 import '../services/notification_service.dart';
 import '../services/location_service.dart';
+import '../services/health_service.dart';
 
 class AppServices {
   static final AppServices _instance = AppServices._internal();
@@ -27,11 +27,11 @@ class AppServices {
   late final SafetyApi safetyApi;
   late final ExploreApi exploreApi;
   late final MediaApi mediaApi;
-  late final StravaApi stravaApi;
   late final NotificationApi notificationApi;
   late final SecureStorageService secureStorageService;
   late final NotificationService notificationService;
   late final LocationService locationService;
+  late final HealthService healthService;
 
   AppServices._internal();
 
@@ -56,11 +56,11 @@ class AppServices {
     safetyApi = SafetyApi(api: apiService);
     exploreApi = ExploreApi(api: apiService);
     mediaApi = MediaApi(api: apiService);
-    stravaApi = StravaApi(api: apiService);
     notificationApi = NotificationApi(api: apiService);
 
     // Initialize other services
     locationService = LocationService();
+    healthService = HealthService();
   }
 
   /// Reset all services (for logout, etc)

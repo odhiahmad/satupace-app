@@ -20,7 +20,7 @@ class MediaApi {
       'type': type,
       'is_primary': isPrimary,
     };
-    final res = await api.post('/media/photos', token: token, body: jsonEncode(body));
+    final res = await api.post('/media/photos', token: token, body: jsonEncode(body), timeout: const Duration(seconds: 120));
     if (res is Map) return Map<String, dynamic>.from(res);
     return {};
   }

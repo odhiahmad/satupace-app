@@ -1,8 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../../core/router/navigation_service.dart';
-import '../../core/router/route_names.dart';
 import '../../shared/components/profile_header_card.dart';
 import '../../shared/components/neon_stat_card.dart';
 import '../../shared/components/profile_info_tile.dart';
@@ -17,6 +17,8 @@ class ProfileViewPage extends StatefulWidget {
 }
 
 class _ProfileViewPageState extends State<ProfileViewPage> {
+  final _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
@@ -26,25 +28,51 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
     });
   }
 
+  Future<void> _pickAndUploadPhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const FaIcon(FontAwesomeIcons.camera),
+              title: const Text('Kamera'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const FaIcon(FontAwesomeIcons.image),
+              title: const Text('Galeri'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+
+    final picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: 800,
+    );
+    if (picked == null) return;
+    if (!mounted) return;
+
+    final provider = Provider.of<ProfileProvider>(context, listen: false);
+    final ok = await provider.uploadProfileImage(File(picked.path));
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? 'Foto profil berhasil diperbarui.' : (provider.error ?? 'Gagal upload foto.')),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final navService = Provider.of<NavigationService>(context, listen: false);
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil Saya'),
-        leading: IconButton(
-          icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 20),
-          onPressed: () => navService.goBack(),
-        ),
-        actions: [
-          IconButton(
-            icon: const FaIcon(FontAwesomeIcons.penToSquare, size: 20),
-            onPressed: () => navService.navigateTo(RouteNames.editProfile),
-            tooltip: 'Edit Profil',
-          ),
-        ],
-      ),
       body: Consumer<ProfileProvider>(
         builder: (context, provider, _) {
           if (provider.loading && provider.profile == null) {
@@ -68,6 +96,7 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
                     name: provider.name,
                     email: provider.email,
                     imageUrl: provider.image,
+                    onAvatarTap: provider.saving ? null : _pickAndUploadPhoto,
                   ),
                   const SizedBox(height: 24),
                   _StatsRow(provider: provider),

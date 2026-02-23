@@ -213,23 +213,60 @@ class _NotificationPageState extends State<NotificationPage> {
 
   void _navigateFromNotif(
       BuildContext context, Map<String, dynamic> n) {
+    final type = (n['type'] ?? '').toString();
     final refType = (n['ref_type'] ?? '').toString();
     final refId = (n['ref_id'] ?? '').toString();
-    if (refId.isEmpty) return;
 
-    switch (refType) {
-      case 'match':
+    // Chat messages
+    if (type == 'direct_message' && refId.isNotEmpty) {
+      Navigator.pushNamed(context, RouteNames.directChat,
+          arguments: {'matchId': refId, 'partnerName': ''});
+      return;
+    }
+    if (type == 'group_message' && refId.isNotEmpty) {
+      Navigator.pushNamed(context, RouteNames.groupChat,
+          arguments: {'groupId': refId, 'groupName': '', 'myRole': ''});
+      return;
+    }
+
+    // Match notifications
+    if (refType == 'match') {
+      if (refId.isNotEmpty && type == 'match_accepted') {
         Navigator.pushNamed(context, RouteNames.directChat,
             arguments: {'matchId': refId, 'partnerName': ''});
-        break;
-      case 'group':
-        Navigator.pushNamed(context, RouteNames.groupChat,
-            arguments: {
-              'groupId': refId,
-              'groupName': '',
-              'myRole': ''
-            });
-        break;
+      } else {
+        Navigator.pushNamed(context, RouteNames.directMatch);
+      }
+      return;
+    }
+
+    // Group notifications → group detail
+    if (refType == 'group' && refId.isNotEmpty) {
+      Navigator.pushNamed(context, RouteNames.groupDetail,
+          arguments: {'groupId': refId, 'myRole': ''});
+      return;
+    }
+    if (refType == 'group') {
+      Navigator.pushNamed(context, RouteNames.groupRun);
+      return;
+    }
+
+    // Activity notifications
+    if (type == 'activity_logged') {
+      Navigator.pushNamed(context, RouteNames.runActivity);
+      return;
+    }
+
+    // Account / safety notifications
+    if (type == 'profile_incomplete' ||
+        type == 'account_verified' ||
+        type == 'password_changed' ||
+        type == 'email_change_request' ||
+        type == 'user_reported' ||
+        type == 'user_blocked' ||
+        type == 'auto_suspended') {
+      Navigator.pushNamed(context, RouteNames.profile);
+      return;
     }
   }
 }
@@ -373,7 +410,7 @@ class _BackendNotifTile extends StatelessWidget {
     if (type.contains('chat') || type.contains('message')) {
       return FontAwesomeIcons.message;
     }
-    if (type.contains('activity') || type.contains('strava')) {
+    if (type.contains('activity')) {
       return FontAwesomeIcons.personRunning;
     }
     if (type.contains('safety') || type.contains('report')) {
@@ -388,7 +425,7 @@ class _BackendNotifTile extends StatelessWidget {
     if (type.contains('chat') || type.contains('message')) {
       return Colors.teal[300]!;
     }
-    if (type.contains('activity') || type.contains('strava')) {
+    if (type.contains('activity')) {
       return Colors.orange[300]!;
     }
     if (type.contains('safety')) return Colors.red[300]!;
