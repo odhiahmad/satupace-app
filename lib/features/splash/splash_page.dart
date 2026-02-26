@@ -119,11 +119,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // App Icon
-                Image.asset(
-                  'assets/images/satupace-icon.png',
-                  width: 110,
-                  height: 110,
-                ),
+                
                 const SizedBox(height: 28),
                 // Logo text (horizontal)
                 Image.asset(

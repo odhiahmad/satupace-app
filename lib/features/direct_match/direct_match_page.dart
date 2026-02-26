@@ -637,6 +637,8 @@ class _AcceptedMatchCard extends StatelessWidget {
     final name = (match['partner_name'] ?? 'Runner').toString();
     final matchId = (match['id'] ?? '').toString();
     final matchedAt = match['matched_at']?.toString();
+    final photoUrl = match['partner_verification_photo']?.toString();
+    final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
 
     return InkWell(
       onTap: () => Navigator.pushNamed(
@@ -664,24 +666,44 @@ class _AcceptedMatchCard extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.neonLime.withValues(alpha: 0.3),
-                    AppTheme.neonLime.withValues(alpha: 0.1),
-                  ],
-                ),
+                gradient: hasPhoto
+                    ? null
+                    : LinearGradient(
+                        colors: [
+                          AppTheme.neonLime.withValues(alpha: 0.3),
+                          AppTheme.neonLime.withValues(alpha: 0.1),
+                        ],
+                      ),
                 border: Border.all(
                     color: AppTheme.neonLime.withValues(alpha: 0.4)),
               ),
-              child: Center(
-                child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.neonLime),
-                ),
-              ),
+              child: hasPhoto
+                  ? ClipOval(
+                      child: Image.network(
+                        photoUrl,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stack) => Center(
+                          child: Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.neonLime),
+                          ),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : '?',
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.neonLime),
+                      ),
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(

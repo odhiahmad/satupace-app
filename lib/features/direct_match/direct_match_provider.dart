@@ -102,6 +102,11 @@ class DirectMatchProvider with ChangeNotifier {
       match['partner_name'] = 'Runner';
       match['partner_id'] = isUser1 ? u2Id : u1Id;
     }
+
+    // Verification photo is only present when match is accepted
+    match['partner_verification_photo'] = isUser1
+        ? match['user_2_verification_photo']
+        : match['user_1_verification_photo'];
   }
 
   // ── Public methods ─────────────────────────────────────────────────────────

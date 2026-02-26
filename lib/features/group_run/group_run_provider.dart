@@ -12,8 +12,10 @@ class GroupRunProvider with ChangeNotifier {
 
   List<Map<String, dynamic>> _groups = [];
   List<Map<String, dynamic>> _myGroups = [];
+  List<Map<String, dynamic>> _schedules = [];
   bool _loading = false;
   bool _loadingMy = false;
+  bool _loadingSchedules = false;
   bool _saving = false;
   String? _error;
 
@@ -33,8 +35,10 @@ class GroupRunProvider with ChangeNotifier {
   // Getters
   List<Map<String, dynamic>> get groups => _groups;
   List<Map<String, dynamic>> get myGroups => _myGroups;
+  List<Map<String, dynamic>> get schedules => _schedules;
   bool get loading => _loading;
   bool get loadingMy => _loadingMy;
+  bool get loadingSchedules => _loadingSchedules;
   bool get saving => _saving;
   String? get error => _error;
   Map<String, String> get filters => _filters;
@@ -270,5 +274,81 @@ class GroupRunProvider with ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  // ── Schedule methods ────────────────────────────────
+
+  Future<void> fetchSchedules(String groupId) async {
+    _loadingSchedules = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final token = await _storage.readToken();
+      if (token == null) throw Exception('Token not found');
+      _schedules = await _api.getSchedules(groupId, token: token);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    } finally {
+      _loadingSchedules = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> createSchedule(String groupId, int dayOfWeek, String startTime) async {
+    try {
+      final token = await _storage.readToken();
+      if (token == null) throw Exception('Token not found');
+      final result = await _api.createSchedule(
+        groupId,
+        {'day_of_week': dayOfWeek, 'start_time': startTime},
+        token: token,
+      );
+      if (result.isNotEmpty) {
+        await fetchSchedules(groupId);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateSchedule(
+    String groupId,
+    String scheduleId,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final token = await _storage.readToken();
+      if (token == null) throw Exception('Token not found');
+      final ok = await _api.updateSchedule(scheduleId, data, token: token);
+      if (ok) await fetchSchedules(groupId);
+      return ok;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteSchedule(String groupId, String scheduleId) async {
+    try {
+      final token = await _storage.readToken();
+      if (token == null) throw Exception('Token not found');
+      final ok = await _api.deleteSchedule(scheduleId, token: token);
+      if (ok) {
+        _schedules.removeWhere((s) => s['id'] == scheduleId);
+        notifyListeners();
+      }
+      return ok;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 }

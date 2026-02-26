@@ -16,6 +16,13 @@ class ProfileProvider with ChangeNotifier {
   String? _error;
   bool _loadedFromApi = false;
 
+  // Verification photo state
+  String? _verificationPhotoUrl;
+  bool _loadingVerificationPhoto = false;
+
+  String? get verificationPhotoUrl => _verificationPhotoUrl;
+  bool get loadingVerificationPhoto => _loadingVerificationPhoto;
+
   ProfileProvider({
     required ProfileApi api,
     required SecureStorageService storage,
@@ -106,11 +113,26 @@ class ProfileProvider with ChangeNotifier {
       final oldImage = _profile?['image']?.toString();
       _profile = await _api.getMyProfile(token: token);
 
-      // Preserve image URL if backend didn't return it in this response
+      // 1. Preserve old image if API didn't return one
       if ((_profile?['image'] == null || _profile!['image'].toString().isEmpty) &&
           oldImage != null && oldImage.isNotEmpty) {
         _profile!['image'] = oldImage;
       }
+
+      // 2. Fallback to dedicated photo endpoint if still no image
+      final mediaApi1 = _mediaApi;
+      if ((_profile?['image'] == null || _profile!['image'].toString().isEmpty) &&
+          mediaApi1 != null) {
+        final uid = _profile?['user_id']?.toString();
+        if (uid != null && uid.isNotEmpty) {
+          try {
+            final photo = await mediaApi1.getPrimaryPhoto(uid, token: token);
+            final url = photo['url']?.toString();
+            if (url != null && url.isNotEmpty) _profile!['image'] = url;
+          } catch (_) {}
+        }
+      }
+
       _loadedFromApi = true;
       await _storage.writeProfileData(_profile!);
       final nameVal = _profile?['name']?.toString();
@@ -139,11 +161,26 @@ class ProfileProvider with ChangeNotifier {
       final oldImage = _profile?['image']?.toString();
       _profile = await _api.getMyProfile(token: token);
 
-      // Preserve image URL if backend didn't return it in this response
+      // 1. Preserve old image if API didn't return one
       if ((_profile?['image'] == null || _profile!['image'].toString().isEmpty) &&
           oldImage != null && oldImage.isNotEmpty) {
         _profile!['image'] = oldImage;
       }
+
+      // 2. Fallback to dedicated photo endpoint if still no image
+      final mediaApi2 = _mediaApi;
+      if ((_profile?['image'] == null || _profile!['image'].toString().isEmpty) &&
+          mediaApi2 != null) {
+        final uid = _profile?['user_id']?.toString();
+        if (uid != null && uid.isNotEmpty) {
+          try {
+            final photo = await mediaApi2.getPrimaryPhoto(uid, token: token);
+            final url = photo['url']?.toString();
+            if (url != null && url.isNotEmpty) _profile!['image'] = url;
+          } catch (_) {}
+        }
+      }
+
       _loadedFromApi = true;
       await _storage.writeProfileData(_profile!);
       final nameVal = _profile?['name']?.toString();
@@ -249,5 +286,81 @@ class ProfileProvider with ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  /// Check if user has a verification photo by fetching all their photos.
+  Future<void> checkVerificationPhoto() async {
+    if (_mediaApi == null) return;
+    _loadingVerificationPhoto = true;
+    notifyListeners();
+    try {
+      final token = await _storage.readToken();
+      if (token == null) return;
+      final photos = await _mediaApi.getMyPhotos(token: token);
+      final verif = photos.where((p) => p['type'] == 'verification').firstOrNull;
+      _verificationPhotoUrl = verif?['url']?.toString();
+    } catch (_) {
+    } finally {
+      _loadingVerificationPhoto = false;
+      notifyListeners();
+    }
+  }
+
+  /// Upload a verification photo (must be a frontal face selfie).
+  Future<bool> uploadVerificationPhoto(File imageFile) async {
+    if (_mediaApi == null) {
+      _error = 'Media API tidak tersedia';
+      notifyListeners();
+      return false;
+    }
+    _saving = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final token = await _storage.readToken();
+      if (token == null) throw Exception('Token not found');
+
+      final bytes = await imageFile.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      final result = await _mediaApi.uploadPhoto(
+        imageBase64: base64Image,
+        type: 'verification',
+        isPrimary: false,
+        token: token,
+      );
+
+      final url = (result['url'] ?? '').toString();
+      if (url.isNotEmpty) {
+        _verificationPhotoUrl = url;
+      }
+      // Refresh profile so is_verified status updates
+      await refreshProfile();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _saving = false;
+      notifyListeners();
+    }
+  }
+
+  /// Verify face against stored verification photo.
+  /// Returns the raw API response: {matched: bool, similarity: double}.
+  Future<Map<String, dynamic>> verifyFace(File imageFile) async {
+    if (_mediaApi == null) return {'matched': false, 'error': 'Media API tidak tersedia'};
+    try {
+      final token = await _storage.readToken();
+      if (token == null) throw Exception('Token not found');
+
+      final bytes = await imageFile.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      return await _mediaApi.verifyFace(imageBase64: base64Image, token: token);
+    } catch (e) {
+      return {'matched': false, 'error': e.toString()};
+    }
   }
 }

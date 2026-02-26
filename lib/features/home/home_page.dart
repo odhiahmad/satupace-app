@@ -26,7 +26,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _index = 0;
-
   late final List<Widget> _pages;
 
   @override
@@ -41,7 +40,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onNavigate(int index) => setState(() => _index = index);
-
   void _handleTabChange(int index) => setState(() => _index = index);
 
   Future<void> _confirmLogout() async {
@@ -68,7 +66,7 @@ class _HomePageState extends State<HomePage> {
     );
 
     if (confirmed == true) {
-      profileProvider.clearProfile(); // Reset so next login fetches fresh data
+      profileProvider.clearProfile();
       await auth.logout();
       navService.navigateToLogin();
     }
@@ -106,9 +104,7 @@ class _HomePageState extends State<HomePage> {
             BottomNavigationBarItem(
               icon: Badge(
                 isLabelVisible: notif.matchUnread > 0,
-                label: Text(notif.matchUnread > 9
-                    ? '9+'
-                    : '${notif.matchUnread}'),
+                label: Text(notif.matchUnread > 9 ? '9+' : '${notif.matchUnread}'),
                 child: const FaIcon(FontAwesomeIcons.userGroup, size: 20),
               ),
               label: 'Matches',
@@ -116,9 +112,7 @@ class _HomePageState extends State<HomePage> {
             BottomNavigationBarItem(
               icon: Badge(
                 isLabelVisible: notif.groupUnread > 0,
-                label: Text(notif.groupUnread > 9
-                    ? '9+'
-                    : '${notif.groupUnread}'),
+                label: Text(notif.groupUnread > 9 ? '9+' : '${notif.groupUnread}'),
                 child: const FaIcon(FontAwesomeIcons.users, size: 20),
               ),
               label: 'Groups',
@@ -160,12 +154,26 @@ class _HomeViewState extends State<_HomeView> {
   Future<void> _loadData() async {
     final profile = Provider.of<ProfileProvider>(context, listen: false);
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final activityProvider =
-        Provider.of<RunActivityProvider>(context, listen: false);
+    final activityProvider = Provider.of<RunActivityProvider>(context, listen: false);
 
     if (profile.profile == null) {
       await profile.fetchProfile();
     }
+
+    final userId = auth.userId;
+    if (userId != null) {
+      activityProvider.loadActivities(userId);
+    }
+
+    await _loadNearbyRunners();
+  }
+
+  Future<void> _refresh() async {
+    final profile = Provider.of<ProfileProvider>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final activityProvider = Provider.of<RunActivityProvider>(context, listen: false);
+
+    await profile.refreshProfile();
 
     final userId = auth.userId;
     if (userId != null) {
@@ -188,7 +196,7 @@ class _HomeViewState extends State<_HomeView> {
       final lat = profile.latitude;
       final lng = profile.longitude;
 
-      if (lat != null && lng != null) {
+      if (lat != null && lng != null && lat != 0 && lng != 0) {
         final runners = await appServices.exploreApi.getRunners(
           latitude: lat,
           longitude: lng,
@@ -209,129 +217,57 @@ class _HomeViewState extends State<_HomeView> {
     final auth = Provider.of<AuthProvider>(context);
     final navService = Provider.of<NavigationService>(context, listen: false);
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(context, auth, navService),
-          _buildWeeklyStats(context),
-          _buildQuickActions(context, navService),
-          _buildNearbyRunnersSection(context),
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          // ── Welcome Banner ───────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _WelcomeBanner(
+              name: auth.name,
+              onNotificationTap: () => navService.navigateToNotification(),
+            ),
+          ),
 
-  Widget _buildHeader(
-      BuildContext context, AuthProvider auth, NavigationService navService) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.darkSurface,
-            AppTheme.darkSurfaceVariant.withValues(alpha: 0.8),
-          ],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Welcome back!',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.grey[400],
-                          fontSize: 12,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    auth.name ?? 'Runner',
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              Consumer<ChatNotificationProvider>(
-                builder: (_, notif, _) => InkWell(
-                  onTap: () => navService.navigateToNotification(),
-                  borderRadius: BorderRadius.circular(25),
-                  child: Badge(
-                    isLabelVisible: notif.totalUnread > 0,
-                    label: Text(
-                        notif.totalUnread > 9 ? '9+' : '${notif.totalUnread}'),
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [AppTheme.neonLime, AppTheme.neonLimeDark],
-                        ),
-                      ),
-                      child: const Center(
-                        child: FaIcon(FontAwesomeIcons.bell,
-                            color: Colors.black87, size: 22),
+          // ── Body ─────────────────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Quick Actions
+                const _HomeSectionHeader(label: 'Aksi Cepat'),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: NeonActionButton(
+                        icon: FontAwesomeIcons.userPlus,
+                        label: 'Temukan Runner',
+                        subtitle: 'Cari pasangan lari',
+                        onPressed: () => widget.onNavigate?.call(1),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: NeonActionButton(
+                        icon: FontAwesomeIcons.peopleGroup,
+                        label: 'Grup Lari',
+                        subtitle: 'Bergabung atau buat',
+                        onPressed: () => widget.onNavigate?.call(2),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+                const SizedBox(height: 24),
 
-  Widget _buildQuickActions(
-      BuildContext context, NavigationService navService) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quick Actions',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: NeonActionButton(
-                  icon: FontAwesomeIcons.userPlus,
-                  label: 'Find Runners',
-                  onPressed: () => widget.onNavigate?.call(1),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: NeonActionButton(
-                  icon: FontAwesomeIcons.peopleGroup,
-                  label: 'My Groups',
-                  onPressed: () => widget.onNavigate?.call(2),
-                ),
-              ),
-            ],
+                // Weekly Stats
+                _buildWeeklyStats(context),
+
+                // Nearby Runners
+                _buildNearbyRunnersSection(context),
+              ]),
+            ),
           ),
         ],
       ),
@@ -344,132 +280,282 @@ class _HomeViewState extends State<_HomeView> {
         if (provider.weeklyRuns == 0 && !provider.loading) {
           return const SizedBox.shrink();
         }
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Minggu Ini',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: NeonStatCard(
-                      icon: FontAwesomeIcons.route,
-                      label: 'Jarak',
-                      value: '${provider.weeklyDistanceKm} km',
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: NeonStatCard(
-                      icon: FontAwesomeIcons.personRunning,
-                      label: 'Lari',
-                      value: '${provider.weeklyRuns}x',
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: NeonStatCard(
-                      icon: FontAwesomeIcons.gaugeHigh,
-                      label: 'Avg Pace',
-                      value: provider.weeklyAvgPace > 0
-                          ? '${provider.weeklyAvgPace} /km'
-                          : '-',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _HomeSectionHeader(label: 'Minggu Ini'),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                NeonStatCard(
+                  icon: FontAwesomeIcons.route,
+                  label: 'Jarak',
+                  value: '${provider.weeklyDistanceKm} km',
+                ),
+                const SizedBox(width: 8),
+                NeonStatCard(
+                  icon: FontAwesomeIcons.personRunning,
+                  label: 'Sesi Lari',
+                  value: '${provider.weeklyRuns}x',
+                ),
+                const SizedBox(width: 8),
+                NeonStatCard(
+                  icon: FontAwesomeIcons.gaugeHigh,
+                  label: 'Avg Pace',
+                  value: provider.weeklyAvgPace > 0
+                      ? '${provider.weeklyAvgPace} /km'
+                      : '-',
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
         );
       },
     );
   }
 
   Widget _buildNearbyRunnersSection(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Nearby Runners',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const _HomeSectionHeader(label: 'Runner Terdekat'),
+            TextButton(
+              onPressed: () => widget.onNavigate?.call(1),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              TextButton(
-                onPressed: () => widget.onNavigate?.call(1),
-                child: Text(
-                  'See All',
-                  style: TextStyle(color: AppTheme.neonLime),
+              child: Text(
+                'Lihat Semua',
+                style: TextStyle(
+                  color: cs.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _loadingRunners
-              ? const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: CircularProgressIndicator(),
-                  ),
-                )
-              : _nearbyRunners.isEmpty
-                  ? Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: AppTheme.darkSurfaceVariant.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Tidak ada runner terdekat.\nPastikan lokasi sudah diset di profil.',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _nearbyRunners.length,
-                      itemBuilder: (context, i) {
-                        final r = _nearbyRunners[i];
-                        final user = r['user'] is Map
-                            ? Map<String, dynamic>.from(r['user'])
-                            : r;
-                        final runnerName =
-                            (user['name'] ?? r['name'] ?? r['full_name'] ?? 'Runner')
-                                .toString();
-                        final prefDist = r['preferred_distance'] ?? 0;
-                        final pace = r['avg_pace'];
-                        final distKm = r['distance_km'];
-                        return RunnerListCard(
-                          name: runnerName,
-                          distance: '$prefDist km',
-                          pace: pace != null
-                              ? '${(pace as num).toStringAsFixed(1)} min/km'
-                              : '-',
-                          location: distKm != null
-                              ? '${(distKm as num).toStringAsFixed(1)}km away'
-                              : '-',
-                        );
-                      },
-                    ),
-        ),
+        const SizedBox(height: 10),
+        if (_loadingRunners)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (_nearbyRunners.isEmpty)
+          _EmptyRunnersCard(isDark: isDark, cs: cs)
+        else
+          ...(_nearbyRunners.map((r) {
+            final user = r['user'] is Map
+                ? Map<String, dynamic>.from(r['user'])
+                : r;
+            final runnerName =
+                (user['name'] ?? r['name'] ?? r['full_name'] ?? 'Runner')
+                    .toString();
+            final prefDist = r['preferred_distance'] ?? 0;
+            final pace = r['avg_pace'];
+            final distKm = r['distance_km'];
+            final imageUrl = (r['image'] ?? user['image'])?.toString();
+
+            return RunnerListCard(
+              name: runnerName,
+              distance: '$prefDist km',
+              pace: pace != null
+                  ? '${(pace as num).toStringAsFixed(1)} min/km'
+                  : '-',
+              location: distKm != null
+                  ? '${(distKm as num).toStringAsFixed(1)} km'
+                  : '-',
+              imageUrl: imageUrl,
+            );
+          })),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Welcome Banner
+// ---------------------------------------------------------------------------
+
+class _WelcomeBanner extends StatelessWidget {
+  final String? name;
+  final VoidCallback onNotificationTap;
+
+  const _WelcomeBanner({this.name, required this.onNotificationTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 36),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [AppTheme.darkSurface, AppTheme.darkSurfaceVariant]
+              : [const Color(0xFF1B4332), const Color(0xFF2D6A4F)],
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Selamat datang kembali!',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.65),
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  name ?? 'Runner',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Ayo temukan teman lari hari ini!',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Consumer<ChatNotificationProvider>(
+            builder: (_, notif, _) => GestureDetector(
+              onTap: onNotificationTap,
+              child: Badge(
+                isLabelVisible: notif.totalUnread > 0,
+                label: Text(
+                  notif.totalUnread > 9 ? '9+' : '${notif.totalUnread}',
+                ),
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.12),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: const Center(
+                    child: FaIcon(
+                      FontAwesomeIcons.bell,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Empty runners state
+// ---------------------------------------------------------------------------
+
+class _EmptyRunnersCard extends StatelessWidget {
+  final bool isDark;
+  final ColorScheme cs;
+
+  const _EmptyRunnersCard({required this.isDark, required this.cs});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+      decoration: BoxDecoration(
+        color: isDark
+            ? cs.surfaceContainerHighest.withValues(alpha: 0.4)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: Column(
+        children: [
+          FaIcon(FontAwesomeIcons.locationDot, size: 32, color: cs.onSurfaceVariant),
+          const SizedBox(height: 10),
+          Text(
+            'Tidak ada runner terdekat',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Pastikan lokasi sudah diset di profil kamu',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Section Header
+// ---------------------------------------------------------------------------
+
+class _HomeSectionHeader extends StatelessWidget {
+  final String label;
+  const _HomeSectionHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label.toUpperCase(),
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.2,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
     );
   }
 }

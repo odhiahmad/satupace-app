@@ -18,29 +18,38 @@ class ProfileInfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: [
               SizedBox(
                 width: 32,
-                child: FaIcon(icon, size: 16, color: const Color(0xFFB8FF00)),
+                child: FaIcon(icon, size: 16, color: cs.primary),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       label,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       value,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: cs.onSurface,
+                      ),
                     ),
                   ],
                 ),
@@ -48,7 +57,8 @@ class ProfileInfoTile extends StatelessWidget {
             ],
           ),
         ),
-        if (!isLast) Divider(height: 1, color: Colors.grey[800]),
+        if (!isLast)
+          Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.4)),
       ],
     );
   }

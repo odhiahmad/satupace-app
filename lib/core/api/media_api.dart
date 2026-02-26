@@ -48,4 +48,47 @@ class MediaApi {
     }
     return [];
   }
+
+  /// Get primary photo for a user.
+  /// GET /media/users/:userId/photos/primary
+  Future<Map<String, dynamic>> getPrimaryPhoto(String userId, {String? token}) async {
+    try {
+      final res = await api.get('/media/users/$userId/photos/primary', token: token);
+      if (res is Map) return Map<String, dynamic>.from(res);
+    } catch (_) {}
+    return {};
+  }
+
+  /// Get photos for the currently logged-in user.
+  /// GET /media/me/photos (JWT required)
+  Future<List<Map<String, dynamic>>> getMyPhotos({String? token}) async {
+    try {
+      final res = await api.get('/media/me/photos', token: token);
+      if (res is List) {
+        return res
+            .map((item) => item is Map ? Map<String, dynamic>.from(item) : <String, dynamic>{})
+            .toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// Verify face against the stored verification photo.
+  /// POST /media/photos/verify-face (JWT required)
+  /// Body: {image: base64}
+  /// Returns: {matched: bool, similarity: float, photo: {...}?}
+  Future<Map<String, dynamic>> verifyFace({
+    required String imageBase64,
+    String? token,
+  }) async {
+    final body = <String, dynamic>{'image': imageBase64};
+    final res = await api.post(
+      '/media/photos/verify-face',
+      token: token,
+      body: jsonEncode(body),
+      timeout: const Duration(seconds: 30),
+    );
+    if (res is Map) return Map<String, dynamic>.from(res);
+    return {};
+  }
 }

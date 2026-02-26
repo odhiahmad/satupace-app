@@ -136,6 +136,59 @@ class GroupRunApi {
     }
   }
 
+  // ── Schedule endpoints ────────────────────────────────────────────────────
+
+  /// Get all schedules for a group.
+  /// GET /runs/groups/:id/schedules
+  Future<List<Map<String, dynamic>>> getSchedules(String groupId, {String? token}) async {
+    try {
+      final res = await api.get('/runs/groups/$groupId/schedules', token: token);
+      if (res is List) {
+        return res
+            .map((item) => item is Map ? Map<String, dynamic>.from(item) : <String, dynamic>{})
+            .toList();
+      }
+    } catch (_) {
+      rethrow;
+    }
+    return [];
+  }
+
+  /// Create a schedule for a group.
+  /// POST /runs/groups/:id/schedules (JWT required)
+  /// Body: {day_of_week (0-6), start_time ("HH:MM")}
+  Future<Map<String, dynamic>> createSchedule(
+    String groupId,
+    Map<String, dynamic> data, {
+    String? token,
+  }) async {
+    final res = await api.post('/runs/groups/$groupId/schedules', token: token, body: jsonEncode(data));
+    if (res is Map) return Map<String, dynamic>.from(res);
+    return {};
+  }
+
+  /// Update a schedule.
+  /// PUT /runs/groups/schedules/:scheduleId (JWT required)
+  Future<bool> updateSchedule(String scheduleId, Map<String, dynamic> data, {String? token}) async {
+    try {
+      await api.put('/runs/groups/schedules/$scheduleId', token: token, body: jsonEncode(data));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Delete a schedule.
+  /// DELETE /runs/groups/schedules/:scheduleId (JWT required)
+  Future<bool> deleteSchedule(String scheduleId, {String? token}) async {
+    try {
+      await api.delete('/runs/groups/schedules/$scheduleId', token: token);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Map<String, dynamic> _normalizeGroup(Map<String, dynamic> input) {
     return {
       'id': (input['id'] ?? '').toString(),

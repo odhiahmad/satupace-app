@@ -85,10 +85,13 @@ class DirectMatchApi {
   Map<String, dynamic> _normalizeMatch(Map<String, dynamic> input) {
     return {
       'id': (input['id'] ?? '').toString(),
-      'user_1_id': (input['user_1_id'] ?? input['user_1_id'] ?? '').toString(),
-      'user_2_id': (input['user_2_id'] ?? input['user_2_id'] ?? '').toString(),
+      'user_1_id': (input['user_1_id'] ?? '').toString(),
+      'user_2_id': (input['user_2_id'] ?? '').toString(),
       'user_1': input['user_1'],
       'user_2': input['user_2'],
+      // Only present when status == 'accepted'
+      'user_1_verification_photo': input['user_1_verification_photo']?.toString(),
+      'user_2_verification_photo': input['user_2_verification_photo']?.toString(),
       'status': (input['status'] ?? 'pending').toString(),
       'created_at': input['created_at']?.toString(),
       'matched_at': input['matched_at']?.toString(),
