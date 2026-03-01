@@ -38,12 +38,14 @@ class DirectMatchApi {
 
   /// Accept a match request.
   /// PATCH /match/:id/accept (JWT required)
-  Future<bool> accept(String matchId, {String? token}) async {
+  /// Returns the updated match data (including verification photos), or null on failure.
+  Future<Map<String, dynamic>?> accept(String matchId, {String? token}) async {
     try {
-      await api.patch('/match/$matchId/accept', token: token);
-      return true;
+      final res = await api.patch('/match/$matchId/accept', token: token);
+      if (res is Map) return _normalizeMatch(Map<String, dynamic>.from(res));
+      return {};
     } catch (_) {
-      return false;
+      return null;
     }
   }
 

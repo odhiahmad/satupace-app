@@ -190,6 +190,13 @@ class GroupRunApi {
   }
 
   Map<String, dynamic> _normalizeGroup(Map<String, dynamic> input) {
+    final rawSchedules = input['schedules'];
+    final schedules = rawSchedules is List
+        ? rawSchedules
+            .map((s) => s is Map ? Map<String, dynamic>.from(s) : <String, dynamic>{})
+            .toList()
+        : <Map<String, dynamic>>[];
+
     return {
       'id': (input['id'] ?? '').toString(),
       'name': (input['name'] ?? 'Run Group').toString(),
@@ -197,6 +204,7 @@ class GroupRunApi {
       'preferred_distance': (input['preferred_distance'] as num?)?.toInt() ?? 0,
       'latitude': (input['latitude'] as num?)?.toDouble() ?? 0,
       'longitude': (input['longitude'] as num?)?.toDouble() ?? 0,
+      'meeting_point': (input['meeting_point'] ?? '').toString(),
       'scheduled_at': (input['scheduled_at'] ?? input['scheduled'])?.toString(),
       'max_member': (input['max_member'] as num?)?.toInt() ?? 0,
       'is_women_only': input['is_women_only'] == true,
@@ -208,6 +216,7 @@ class GroupRunApi {
       'my_role': (input['my_role'] ?? '').toString(),
       'min_pace': (input['min_pace'] as num?)?.toDouble(),
       'max_pace': (input['max_pace'] as num?)?.toDouble(),
+      'schedules': schedules,
     };
   }
 }

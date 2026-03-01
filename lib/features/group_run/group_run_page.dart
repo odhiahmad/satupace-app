@@ -587,6 +587,12 @@ class _GroupCard extends StatelessWidget {
     final isWomenOnly = group['is_women_only'] == true;
     final scheduledAt = group['scheduled_at'];
     final role = myRole.isNotEmpty ? myRole : (group['my_role'] ?? '').toString();
+    final schedules = (group['schedules'] as List?)
+            ?.whereType<Map>()
+            .map((s) => Map<String, dynamic>.from(s))
+            .where((s) => s['is_active'] != false)
+            .toList() ??
+        [];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -673,6 +679,41 @@ class _GroupCard extends StatelessWidget {
                   Text(_formatSchedule(scheduledAt.toString()),
                       style: TextStyle(fontSize: 12, color: Colors.grey[400])),
                 ],
+              ),
+            ),
+          if (schedules.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: schedules.map((s) {
+                  final dayName = (s['day_name'] ?? '').toString();
+                  final time = (s['start_time'] ?? '').toString();
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppTheme.neonLime.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                          color: AppTheme.neonLime.withValues(alpha: 0.25)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FaIcon(FontAwesomeIcons.repeat,
+                            size: 9, color: AppTheme.neonLime),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$dayName • $time',
+                          style: TextStyle(
+                              fontSize: 11, color: Colors.grey[300]),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
             ),
           if (role.isNotEmpty)

@@ -117,8 +117,10 @@ class DirectMatchEntity {
   final String id;
   final String user1Id;
   final UserEntity? user1;
+  final String? user1VerificationPhoto;
   final String user2Id;
   final UserEntity? user2;
+  final String? user2VerificationPhoto;
   final String status;
   final String? createdAt;
   final String? matchedAt;
@@ -127,8 +129,10 @@ class DirectMatchEntity {
     required this.id,
     required this.user1Id,
     this.user1,
+    this.user1VerificationPhoto,
     required this.user2Id,
     this.user2,
+    this.user2VerificationPhoto,
     required this.status,
     this.createdAt,
     this.matchedAt,
@@ -141,10 +145,12 @@ class DirectMatchEntity {
       user1: json['user_1'] is Map
           ? UserEntity.fromJson(Map<String, dynamic>.from(json['user_1']))
           : null,
+      user1VerificationPhoto: json['user_1_verification_photo']?.toString(),
       user2Id: (json['user_2_id'] ?? json['user2_id'] ?? '').toString(),
       user2: json['user_2'] is Map
           ? UserEntity.fromJson(Map<String, dynamic>.from(json['user_2']))
           : null,
+      user2VerificationPhoto: json['user_2_verification_photo']?.toString(),
       status: (json['status'] ?? 'pending').toString(),
       createdAt: json['created_at']?.toString(),
       matchedAt: json['matched_at']?.toString(),

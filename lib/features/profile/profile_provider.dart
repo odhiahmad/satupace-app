@@ -19,9 +19,11 @@ class ProfileProvider with ChangeNotifier {
   // Verification photo state
   String? _verificationPhotoUrl;
   bool _loadingVerificationPhoto = false;
+  String? _uploadWarning;
 
   String? get verificationPhotoUrl => _verificationPhotoUrl;
   bool get loadingVerificationPhoto => _loadingVerificationPhoto;
+  String? get uploadWarning => _uploadWarning;
 
   ProfileProvider({
     required ProfileApi api,
@@ -334,6 +336,9 @@ class ProfileProvider with ChangeNotifier {
       if (url.isNotEmpty) {
         _verificationPhotoUrl = url;
       }
+      // Capture warning from BE (e.g., face not clearly detected)
+      final warning = result['warning']?.toString();
+      _uploadWarning = (warning != null && warning.isNotEmpty) ? warning : null;
       // Refresh profile so is_verified status updates
       await refreshProfile();
       return true;
@@ -348,7 +353,8 @@ class ProfileProvider with ChangeNotifier {
   }
 
   /// Verify face against stored verification photo.
-  /// Returns the raw API response: {matched: bool, similarity: double}.
+  /// Returns the raw API response: {matched: bool, similarity: double, photo: {...}?}.
+  /// When matched=true, BE sets IsVerified=true — profile is refreshed automatically.
   Future<Map<String, dynamic>> verifyFace(File imageFile) async {
     if (_mediaApi == null) return {'matched': false, 'error': 'Media API tidak tersedia'};
     try {
@@ -358,7 +364,12 @@ class ProfileProvider with ChangeNotifier {
       final bytes = await imageFile.readAsBytes();
       final base64Image = base64Encode(bytes);
 
-      return await _mediaApi.verifyFace(imageBase64: base64Image, token: token);
+      final result = await _mediaApi.verifyFace(imageBase64: base64Image, token: token);
+      // BE sets IsVerified=true when face matches — refresh profile to sync state
+      if (result['matched'] == true) {
+        await refreshProfile();
+      }
+      return result;
     } catch (e) {
       return {'matched': false, 'error': e.toString()};
     }

@@ -100,12 +100,18 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
     final ok = await provider.uploadVerificationPhoto(File(picked.path));
 
     if (!mounted) return;
+    final warning = provider.uploadWarning;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(ok
-            ? 'Foto verifikasi berhasil diunggah!'
+            ? (warning ?? 'Foto verifikasi berhasil diunggah!')
             : (provider.error ?? 'Gagal upload foto verifikasi.')),
-        backgroundColor: ok ? const Color(0xFF2D5A3D) : Colors.red,
+        backgroundColor: ok
+            ? (warning != null ? Colors.orange[800] : const Color(0xFF2D5A3D))
+            : Colors.red,
+        duration: warning != null
+            ? const Duration(seconds: 6)
+            : const Duration(seconds: 3),
       ),
     );
   }

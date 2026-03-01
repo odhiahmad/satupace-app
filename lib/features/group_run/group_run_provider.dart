@@ -170,8 +170,11 @@ class GroupRunProvider with ChangeNotifier {
     }
   }
 
-  // Create group
-  Future<bool> createGroup(Map<String, dynamic> data) async {
+  // Create group, lalu buat schedules jika ada
+  Future<bool> createGroup(
+    Map<String, dynamic> data, {
+    List<Map<String, dynamic>>? schedules,
+  }) async {
     _saving = true;
     _error = null;
     notifyListeners();
@@ -180,7 +183,15 @@ class GroupRunProvider with ChangeNotifier {
       final token = await _storage.readToken();
       if (token == null) throw Exception('Token not found');
 
-      await _api.createGroup(data, token: token);
+      final result = await _api.createGroup(data, token: token);
+      final groupId = result['id']?.toString();
+
+      if (groupId != null && groupId.isNotEmpty && schedules != null) {
+        for (final sch in schedules) {
+          await _api.createSchedule(groupId, sch, token: token);
+        }
+      }
+
       await fetchExploreGroups();
       await fetchMyGroups();
       return true;

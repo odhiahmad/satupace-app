@@ -169,12 +169,18 @@ class DirectMatchProvider with ChangeNotifier {
     try {
       final token = await _storage.readToken();
       if (token == null) throw Exception('Token not found');
+      final myId = await _getMyUserId();
       final result =
           await _api.sendMatchRequest(userId2: userId, token: token);
       if (result.isNotEmpty) {
         _candidates.removeWhere(
           (c) => (c['user_id'] ?? c['id'] ?? '').toString() == userId,
         );
+        // Jika reverse match (auto-accepted), langsung masukkan ke acceptedMatches
+        if (result['status'] == 'accepted') {
+          _enrichWithPartner(result, myId);
+          _acceptedMatches.insert(0, result);
+        }
         notifyListeners();
         return true;
       }
@@ -190,20 +196,19 @@ class DirectMatchProvider with ChangeNotifier {
     try {
       final token = await _storage.readToken();
       if (token == null) throw Exception('Token not found');
-      final success = await _api.accept(matchId, token: token);
-      if (success) {
-        final idx =
-            _pendingMatches.indexWhere((m) => m['id'] == matchId);
-        if (idx != -1) {
-          final match = _pendingMatches.removeAt(idx);
-          match['status'] = 'accepted';
-          _acceptedMatches.insert(0, match);
-        } else {
-          _pendingMatches.removeWhere((m) => m['id'] == matchId);
+      final myId = await _getMyUserId();
+      final result = await _api.accept(matchId, token: token);
+      if (result != null) {
+        _pendingMatches.removeWhere((m) => m['id'] == matchId);
+        // Gunakan data dari server (sudah ada verification photo) bukan state lokal
+        if (result.isNotEmpty) {
+          _enrichWithPartner(result, myId);
+          _acceptedMatches.insert(0, result);
         }
         notifyListeners();
+        return true;
       }
-      return success;
+      return false;
     } catch (e) {
       _matchesError = e.toString();
       notifyListeners();
