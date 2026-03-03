@@ -129,7 +129,7 @@ class GroupRunProvider with ChangeNotifier {
       _filters['longitude'] = longitude.toString();
       _filters['radius_km'] ??= radiusKm.toStringAsFixed(0);
 
-      _groups = await _exploreApi.getGroups(
+      final raw = await _exploreApi.getGroups(
         latitude: latitude,
         longitude: longitude,
         radiusKm: radiusKm,
@@ -139,6 +139,13 @@ class GroupRunProvider with ChangeNotifier {
         status: status,
         token: token,
       );
+      // Normalize group_id → id so UI can use g['id'] consistently
+      _groups = raw.map((g) {
+        if (g.containsKey('group_id') && !g.containsKey('id')) {
+          return {...g, 'id': g['group_id']};
+        }
+        return g;
+      }).toList();
       notifyListeners();
     } catch (e) {
       _error = e.toString();

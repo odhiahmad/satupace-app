@@ -9,7 +9,7 @@ class AppConfig {
   static const String _envOverride = String.fromEnvironment('API_BASE_URL');
 
   /// Base URL for the API.
-  /// - Release mode → https://api.runsync.id
+  /// - Release mode → https://api.satupace.id
   /// - Debug / profile on Android → http://10.0.2.2:8080  (emulator → host)
   /// - Debug / profile on iOS sim  → http://localhost:8080
   /// - Debug / profile on desktop  → http://localhost:8080
@@ -18,7 +18,7 @@ class AppConfig {
   ///   flutter run --dart-define=API_BASE_URL=https://custom.api.com
   static String get apiBaseUrl {
     if (_envOverride.isNotEmpty) return _envOverride;
-    if (kReleaseMode) return 'https://api.runsync.id';
+    if (kReleaseMode) return 'https://api.satupace.id';
     // Android emulator uses 10.0.2.2 to reach the host machine
     if (Platform.isAndroid) return 'http://10.0.2.2:8080';
     return 'http://localhost:8080';

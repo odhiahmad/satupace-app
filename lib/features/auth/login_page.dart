@@ -83,11 +83,6 @@ class _LoginPageState extends State<LoginPage> {
                       // Logo and branding
                       Column(
                         children: [
-                          Image.asset(
-                            'assets/images/satupace-icon.png',
-                            width: 100,
-                            height: 100,
-                          ),
                           const SizedBox(height: 20),
                           Image.asset(
                             'assets/images/satupace-logo-panjang.png',

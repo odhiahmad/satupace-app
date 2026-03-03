@@ -353,8 +353,9 @@ class ProfileProvider with ChangeNotifier {
   }
 
   /// Verify face against stored verification photo.
-  /// Returns the raw API response: {matched: bool, similarity: double, photo: {...}?}.
-  /// When matched=true, BE sets IsVerified=true — profile is refreshed automatically.
+  /// Returns the raw API response: {matched: bool, similarity: double, is_verified: bool, photo: {...}?}.
+  /// Uses is_verified from FaceVerifyResponse to update local state immediately,
+  /// then refreshes profile to sync remaining fields.
   Future<Map<String, dynamic>> verifyFace(File imageFile) async {
     if (_mediaApi == null) return {'matched': false, 'error': 'Media API tidak tersedia'};
     try {
@@ -365,7 +366,14 @@ class ProfileProvider with ChangeNotifier {
       final base64Image = base64Encode(bytes);
 
       final result = await _mediaApi.verifyFace(imageBase64: base64Image, token: token);
-      // BE sets IsVerified=true when face matches — refresh profile to sync state
+
+      // Use is_verified from FaceVerifyResponse directly to update local state immediately
+      if (result.containsKey('is_verified') && _profile != null) {
+        _profile!['is_verified'] = result['is_verified'] == true;
+        notifyListeners();
+      }
+
+      // Refresh profile to sync all other fields from server
       if (result['matched'] == true) {
         await refreshProfile();
       }
